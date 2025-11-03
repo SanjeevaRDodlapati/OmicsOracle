@@ -1,0 +1,92 @@
+# ==============================================================================
+# PRODUCTION DEPENDENCIES - OMICSORACLE V2
+# ==============================================================================
+# Generated: November 1, 2025
+# Method: pipreqs analysis + manual curation
+# Purpose: Core dependencies for production deployment
+#
+# Installation:
+#   pip install -r requirements/base.txt
+#
+# ==============================================================================
+
+# Web Framework & ASGI
+fastapi==0.115.13
+uvicorn[standard]==0.34.3
+starlette==0.46.2
+python-multipart==0.0.20
+
+# Data Validation & Settings
+pydantic==2.9.2
+pydantic-settings==2.10.0
+
+# Database & ORM
+SQLAlchemy==2.0.41
+alembic==1.16.5
+aiosqlite==0.21.0
+
+# Caching
+redis==6.2.0
+
+# Async HTTP & File I/O
+aiohttp==3.12.13
+aiofiles==24.1.0
+urllib3==2.4.0
+requests==2.32.4
+
+# HTML & PDF Processing
+beautifulsoup4==4.14.2
+PyPDF2==3.0.1
+pdfplumber==0.11.7
+pdfminer.six==20250506
+
+# Bioinformatics & Genomics
+GEOparse==2.0.4
+biopython==1.85
+pysradb==2.2.2
+
+# Natural Language Processing
+spacy==3.7.5
+# Note: Install spacy models separately:
+#   python -m spacy download en_core_web_sm
+
+# Scientific NLP (optional, uncomment if using biomedical NER)
+# scispacy==0.5.5
+# en-core-sci-sm @ https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_sm-0.5.4.tar.gz
+
+# AI & LLM
+openai==1.90.0
+
+# Authentication & Security
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.3.0
+
+# Configuration Management
+python-dotenv==1.0.0
+PyYAML==6.0.2
+
+# Monitoring & Metrics
+prometheus-client==0.23.1
+
+# Date/Time Utilities
+python-dateutil==2.9.0.post0
+
+# Logging
+coloredlogs==15.0.1
+
+# ==============================================================================
+# NOTES
+# ==============================================================================
+# 1. This is a MINIMAL set of dependencies for production
+# 2. Development tools (pytest, black, etc.) are in dev.txt
+# 3. ML dependencies (torch, transformers) will be in ml.txt when needed
+# 4. Total install size: ~500MB (vs ~3GB with full requirements.txt)
+# 5. Docker image size: ~2GB (vs ~8GB with full requirements.txt)
+#
+# To install with development tools:
+#   pip install -r requirements/dev.txt
+#
+# To add ML capabilities (future M2 integration):
+#   pip install -r requirements/ml.txt
+# ==============================================================================
