@@ -1,7 +1,7 @@
 # AI Analysis State and Cache Assessment
 
 **Date:** July 26, 2026
-**Scope:** Dashboard AI-analysis panels, repeated-query behavior, Redis caching, and parsed full-text caching
+**Scope:** Dashboard AI-analysis panels, repeated-query behavior, PDF preview, result and analysis export, Redis caching, and parsed full-text caching
 
 ## Executive Summary
 
@@ -11,6 +11,10 @@ The dashboard does not currently provide the expected analysis-panel experience.
 
 The highest-priority improvement is therefore a frontend analysis-state layer. It should cache structured analysis responses for the browser session, keep at most one panel expanded, restore completed analyses after result rendering, and use the existing Redis AI cache as the cross-session fallback.
 
+Downloaded PDFs are currently available to the analysis pipeline but not to dashboard users. The preferred preview experience is a responsive document drawer: a right-side viewer on desktop and a full-screen viewer on narrow screens. This keeps the dataset and AI analysis in context, supports multiple papers, and avoids the cramped reading experience of a banner or small modal.
+
+Export should be available at two distinct scopes: the complete returned search and each completed AI analysis. Search exports should prioritize interoperable JSON and CSV; analysis exports should prioritize structured JSON and readable Markdown, with browser print-to-PDF as a presentation option. Export must operate on structured state rather than rendered DOM text.
+
 ## Expected Behavior
 
 1. Opening an analysis for dataset B collapses the analysis for dataset A.
@@ -19,6 +23,8 @@ The highest-priority improvement is therefore a frontend analysis-state layer. I
 4. Re-rendering results, loading more results, or completing full-text enrichment does not lose completed analyses.
 5. Repeating the same query restores matching completed analyses automatically.
 6. Repeating an identical AI request does not invoke the model again while the server cache entry is valid.
+7. Users can export all results returned by the current search, not only the cards currently visible.
+8. Users can export a completed AI analysis without rerunning it.
 
 ## Current Behavior
 
@@ -32,6 +38,9 @@ The highest-priority improvement is therefore a frontend analysis-state layer. I
 | Search result caching | Available | Redis caches equivalent search requests for 24 hours. |
 | Duplicate model-call prevention | Available | Redis caches raw AI response text for seven days using a content-derived key. |
 | Parsed full-text caching | Available | Parsed documents use a seven-day Redis hot tier and a 90-day compressed-disk warm tier. |
+| Downloaded PDF preview | Missing | Cards show PDF counts, but no authenticated PDF-serving route or preview UI exists. |
+| Whole-search export | Missing | Search data is retained in browser memory, but no results export action exists. |
+| AI analysis export | Partial/legacy | A JSON export scrapes `analysis-content.innerText`; it is not connected to structured inline-analysis state and may export the wrong or incomplete analysis. |
 
 ## Evidence Reviewed
 
@@ -55,6 +64,12 @@ The assessment covered these active implementation surfaces:
   - Redis and disk parsed-content tiers
 - `omics_oracle_v2/lib/search_orchestration/orchestrator.py`
   - Search cache reads and writes
+- `omics_oracle_v2/api/models/responses.py`
+  - Full-text response data and local `pdf_path` fields
+- `omics_oracle_v2/api/main.py`
+  - Static-file mounts and current file-response routes
+- `omics_oracle_v2/api/models/responses.py`
+  - Structured search, dataset, publication, and report response fields
 
 Live Redis inspection found:
 
@@ -136,6 +151,20 @@ Prompt changes usually alter the AI key because the complete prompt is hashed, b
 
 **Impact:** Old provider responses may be reparsed under new application assumptions until their seven-day TTL expires.
 
+### 6. Downloaded Papers Cannot Be Inspected in the Dashboard
+
+Dataset cards display the number of downloaded PDFs and whether they are available for AI analysis, but they do not provide a preview action. Response models contain local `pdf_path` values, while the API has no dedicated route for securely serving a downloaded paper. A filesystem path must not be converted directly into a public URL.
+
+**Impact:** Users cannot verify source material, compare AI claims with the paper, or identify a wrong/corrupt download without leaving the application and locating files manually.
+
+### 7. Export Is Incomplete and Coupled to Rendered HTML
+
+The dashboard has a legacy **Export Report** action for the separate analysis section. It constructs JSON from `selectedDataset`, `analysis-content.innerText`, the current time, and the current user. Inline analyses are rendered in per-card containers, so this function is not a reliable representation of the active analysis. DOM text also loses response structure, model metadata, and distinctions between analysis, insights, and recommendations.
+
+There is no export for search results. The browser already holds the full response returned by the search endpoint in `lastSearchResponse` and up to 1,000 datasets in `allSearchResults`, while only a subset is displayed. Exporting `currentResults` would silently omit results that have not yet been revealed with **Load More**.
+
+**Impact:** Researchers cannot reliably move ranked results into statistical tools, preserve reproducible analysis artifacts, or share an AI result without copying rendered text manually.
+
 ## Recommended Design
 
 ### Priority 1: Browser Analysis State
@@ -195,6 +224,102 @@ Expose cache hit status to logs or API diagnostics, not as a prominent dashboard
 
 Move the hardcoded AI TTL to configuration. Seven days is a reasonable default, but deployments should be able to tune cost, freshness, and Redis capacity independently.
 
+### Priority 6: Responsive PDF Document Drawer
+
+Add a **View Papers** action beside the existing PDF status when one or more files are available. The recommended presentation is:
+
+- Desktop: a resizable right-side drawer occupying approximately 40-55% of the viewport, with the result card and AI analysis still visible on the left.
+- Tablet and mobile: a full-screen document viewer with a clear back/close control.
+- Multiple PDFs: a compact paper selector showing title, publication identifier, source, and download status. Selecting a paper changes the active preview without closing the drawer.
+- Viewer: use the browser's native PDF renderer through an `iframe` or `object` initially. Provide **Open in New Tab** and **Download** fallbacks when inline rendering is unavailable.
+- State: remember the selected paper and drawer width in memory for the current tab. Do not automatically reopen the drawer after a new search or page reload.
+
+A centered modal is acceptable only as a short-term implementation. It blocks comparison with the analysis and becomes awkward for long documents. An expanded bar or banner is not recommended because a readable paper requires substantial vertical and horizontal space. Embedding a viewer inside every result card is also not recommended because it would destabilize card layout and create multiple expensive PDF renderers.
+
+The drawer should connect evidence to analysis without trying to synchronize them prematurely. A later enhancement can allow analysis citations or paper references to open the relevant PDF, but page-level deep linking should wait until the backend reliably records page numbers or text coordinates.
+
+#### Required API Contract
+
+Do not expose or accept arbitrary filesystem paths. Add authenticated endpoints based on an opaque paper/acquisition identifier, for example:
+
+```text
+GET /api/papers/{paper_id}/content
+GET /api/datasets/{geo_id}/papers
+```
+
+The metadata endpoint should return only browser-safe fields such as `paper_id`, title, PMID/PMCID/DOI, source, page count when known, and preview availability. It should not return the server's local `pdf_path`.
+
+The content endpoint should:
+
+- Resolve `paper_id` through persisted acquisition metadata.
+- Verify that the resolved file remains inside the configured PDF storage root.
+- Require the same authorization policy as the associated dataset or analysis.
+- Return `Content-Type: application/pdf` and `Content-Disposition: inline` with a sanitized filename.
+- Support HTTP range requests so browser viewers can seek through large papers efficiently.
+- Reject missing, stale, non-PDF, and magic-byte-invalid files with explicit status codes.
+- Use a restrictive content security policy and `X-Content-Type-Options: nosniff`.
+- Avoid logging local paths, credentials, signed URLs, or paper content.
+
+Only legally acquired files from the configured open-access or institutional providers should be previewable. The preview route must not broaden provider access or bypass source terms.
+
+#### Preview Caching
+
+The PDF file is already persistent storage and should not be copied into `sessionStorage`, local storage, or Redis. Let the browser use normal HTTP caching and range requests. Use conservative headers for authenticated content, for example private revalidation rather than a public shared cache. Revocation or deletion must make the content endpoint unavailable immediately.
+
+### Priority 7: Structured Search and Analysis Export
+
+Add an **Export** menu to the search-results header and an export action to each completed analysis panel. Keep the scopes explicit so users understand what will be downloaded.
+
+#### Whole-Search Export
+
+The initial implementation can run entirely in the browser because the dashboard requests up to 1,000 results in one response. Export the complete returned set from `lastSearchResponse` or `allSearchResults`, not the currently displayed `currentResults` slice.
+
+Offer these formats:
+
+- **CSV - All returned datasets:** one row per dataset with stable scalar columns such as rank, GEO ID, title, organism, platform, sample count, relevance score, publication date, PubMed IDs, citation count, PDF count, processing status, and match reasons. Encode list fields with a documented delimiter or JSON string.
+- **JSON - Complete search:** a versioned, lossless export containing query, search terms, filters, query-processing context, total returned, dataset metadata, publication metadata, execution timestamp, and application/export schema version.
+
+The menu label should state the scope, for example **Export 347 returned results**, even if only 50 cards are visible. If the backend reports more matches than it returned because of a limit, the export must say **returned results**, not **all matches**. A future server-side export job can support result sets beyond the response cap.
+
+Do not include parsed full-text sections, local `pdf_path` values, user/authentication objects, cache keys, internal search logs, or credentials by default. Source publication identifiers and public source URLs are appropriate to include. An optional diagnostics export can be a separate, clearly labeled action for administrators.
+
+#### Individual AI Analysis Export
+
+Export from the structured analysis response retained by the proposed analysis state map. Never scrape `innerText` or serialized rendered HTML.
+
+Offer these formats:
+
+- **Markdown:** a readable report containing query, dataset identity, generated analysis, key insights, recommendations, model, generation time, and source-paper identifiers.
+- **JSON:** the complete validated `AIAnalysisResponse` plus a versioned provenance envelope containing dataset/content fingerprint, query, model configuration, generated/cached timestamp, and application version.
+- **Print / Save as PDF:** provide a print-optimized analysis view and invoke the browser print dialog. Defer server-generated PDF reports until branding, pagination, and archival requirements justify the added rendering dependency.
+
+The export action should remain available when a restored analysis is collapsed and must not call `/api/agents/analyze` again. Use a filename such as:
+
+```text
+omicsoracle-analysis-GSE12345-2026-07-26.md
+omicsoracle-search-breast-cancer-rna-seq-2026-07-26.csv
+```
+
+Sanitize filenames, cap their length, and use UTC timestamps inside exported metadata. Display model-generated content as such and include a concise notice that results require scientific review.
+
+#### Combined Research Package
+
+After search and per-analysis export are stable, consider an optional ZIP package for a reproducible handoff:
+
+```text
+manifest.json
+datasets.csv
+search.json
+analyses/GSE12345.md
+analyses/GSE67890.md
+```
+
+Include only analyses already completed for the current search. Do not trigger missing analyses during export and do not bundle downloaded PDFs by default because file size, licensing, and institutional-access terms vary. A PDF manifest with identifiers and legal source links is safer than copying documents into the package.
+
+#### Export State and Caching
+
+Exports are derived artifacts and do not need Redis entries. Generate small exports client-side from structured state. Revoke object URLs immediately after download. If server-side jobs are later introduced for very large exports, store short-lived job metadata separately and enforce the same authorization and data-minimization policy as the source search.
+
 ## Proposed Interaction Flow
 
 1. User clicks **AI Analysis**.
@@ -206,6 +331,13 @@ Move the hardcoded AI TTL to configuration. Seven days is a reasonable default, 
 7. Dashboard stores the structured response and renders it.
 8. Opening another analysis collapses the current panel while preserving both responses.
 9. A repeated search rebuilds result cards and reattaches matching analyses in collapsed form.
+10. User selects **View Papers** on a dataset with downloaded PDFs.
+11. Dashboard fetches paper metadata and opens the responsive document drawer.
+12. The selected PDF streams through the authenticated content endpoint using range requests.
+13. User can switch papers, compare the paper with the analysis, open it in a new tab, download it, or close the drawer without changing analysis state.
+14. User opens the search-header **Export** menu and selects CSV or JSON for all returned results.
+15. Dashboard builds the export from the complete structured search response, independent of how many cards are visible.
+16. User exports a completed analysis as Markdown, JSON, or through a print-optimized view without another model request.
 
 ## Acceptance Criteria
 
@@ -220,7 +352,29 @@ Move the hardcoded AI TTL to configuration. Seven days is a reasonable default, 
 - Redis key families are namespaced and versioned.
 - Cache entries never contain API keys or credentials.
 - Automated tests cover panel toggling, one-open-panel behavior, result re-render restoration, session restoration, stale fingerprint invalidation, Redis hit behavior, and Redis-unavailable fallback.
+- A dataset with downloaded papers exposes a **View Papers** action; a dataset without papers does not.
+- The desktop preview opens in a side drawer and the mobile preview opens full-screen without overflowing or covering controls.
+- Users can switch among multiple downloaded papers without creating multiple embedded viewers.
+- Closing the preview releases the embedded document and returns focus to the button that opened it.
+- Keyboard users can open, navigate, and close the viewer; the close action supports `Escape` and has an accessible label.
+- The PDF endpoint supports `HEAD` and byte-range requests and returns correct PDF headers.
+- The PDF endpoint never accepts a local path and rejects traversal, unknown IDs, unauthorized access, files outside the storage root, and invalid PDF content.
+- Local filesystem paths are absent from browser-facing paper metadata.
+- Previewing a PDF does not duplicate it in Redis or browser storage.
+- The search header reports the exact export scope and exports all returned datasets, including results not yet displayed by **Load More**.
+- Search CSV has deterministic column order, stable UTF-8 encoding, escaped formulas, and correct quoting for commas, quotes, and newlines.
+- Search JSON and analysis JSON contain an explicit schema version and enough provenance to interpret the artifact later.
+- Per-analysis Markdown and JSON are generated from structured response state, not DOM text or HTML.
+- Exporting a restored or collapsed analysis makes no network or model request.
+- Exports omit parsed full text, local paths, authentication data, credentials, cache keys, and internal logs by default.
+- Filenames are sanitized and deterministic enough to associate artifacts with their query or GEO dataset.
+- Empty searches, partial responses, Unicode metadata, multiple PubMed IDs, and spreadsheet-formula-like values are covered by automated export tests.
+- Object URLs are revoked after client-side downloads, and repeated exports do not leak browser memory.
 
 ## Conclusion
 
-OmicsOracle's backend cache design already avoids much of the expensive repeated work. The missing behavior is primarily frontend state management, not model caching. Implementing structured session analysis state, a single-open-panel controller, and restoration after result rendering will deliver the expected experience. Redis namespacing, explicit versioning, and structured-response caching are worthwhile follow-up improvements for operational clarity and long-term maintainability.
+OmicsOracle's backend cache design already avoids much of the expensive repeated work. The missing analysis behavior is primarily frontend state management, not model caching. Implementing structured session analysis state, a single-open-panel controller, and restoration after result rendering will deliver the expected analysis experience.
+
+Downloaded-paper preview is a separate but complementary usability improvement. A responsive document drawer backed by an authenticated, identifier-based, range-capable PDF endpoint gives researchers a practical way to validate AI output against source material without exposing local storage paths. Redis namespacing, explicit versioning, and structured-response caching remain worthwhile follow-up improvements for operational clarity and long-term maintainability.
+
+Structured export completes the research workflow by making searches reusable in downstream tools and AI analyses preservable as reviewable artifacts. The implementation should replace the legacy DOM-scraping export with explicit search-level and analysis-level actions, versioned schemas, provenance, and conservative field filtering.
