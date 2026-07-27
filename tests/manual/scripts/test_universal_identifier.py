@@ -310,12 +310,6 @@ def test_all_source_compatibility():
             title="Crossref paper",
             source=PublicationSource.PUBMED,
         ),
-        "SciHub": Publication(
-            doi="10.9999/scihub", title="SciHub paper", source=PublicationSource.PUBMED
-        ),
-        "LibGen": Publication(
-            doi="10.8888/libgen", title="LibGen paper", source=PublicationSource.PUBMED
-        ),
         "Institutional": Publication(
             doi="10.7777/inst",
             title="Institutional paper",

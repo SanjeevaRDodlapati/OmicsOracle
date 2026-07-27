@@ -1393,7 +1393,7 @@
         <div id="analysis-section" class="analysis-section">
             <div class="analysis-header">
                 <h3>
-                    <span>GPT-4 Analysis</span>
+                    <span>AI Analysis</span>
                     <span class="ai-badge">AI-POWERED</span>
                 </h3>
                 <button class="btn-export" onclick="exportAnalysis()">
@@ -1746,10 +1746,8 @@ Sources tried (in order):
 5. OpenAlex
 6. bioRxiv/arXiv
 7. Crossref
-8. Sci-Hub (last resort)
-9. LibGen (final fallback)
 
-Reason: Papers are behind paywalls not covered by any source.
+Reason: No valid PDF was retrieved. The paper may be access-restricted, or a source may be temporarily unavailable.
 
 AI Analysis will use GEO metadata only.`;
                     showErrorModal('Download Failed', message);
@@ -2185,7 +2183,7 @@ ${error.stack || 'Not available'}`;
         async function selectDataset(index) {
             selectedDataset = currentResults[index];
 
-            // Request GPT-4 analysis (inline)
+            // Request reasoning analysis (inline)
             await analyzeDatasetInline(selectedDataset, index);
         }
 
@@ -2327,7 +2325,7 @@ ${error.stack || 'Not available'}`;
                 .join('');
         }
 
-        // Display GPT-4 analysis inline
+        // Display reasoning analysis inline
         function displayAnalysisInline(analysis, dataset, contentElement) {
             const summary = analysis.analysis || analysis.summary || 'No analysis available';
             const findings = analysis.insights || analysis.key_findings || analysis.findings || [];
@@ -2341,7 +2339,7 @@ ${error.stack || 'Not available'}`;
             // Use DATABASE metrics for accurate paper counts
             const hasFullText = dataset.fulltext_count > 0;
             const totalPapers = dataset.citation_count || 0;
-            const analyzedPapers = Math.min(dataset.fulltext_count || 0, 15); // Backend analyzes max 15 papers with GPT-4 Turbo
+            const analyzedPapers = Math.min(dataset.fulltext_count || 0, 15); // Backend analyzes at most 15 papers
             const hasTokenLimit = (dataset.fulltext_count || 0) > 15;
 
             contentElement.innerHTML = `
@@ -2378,7 +2376,7 @@ ${error.stack || 'Not available'}`;
                             <span style="color: #047857; font-size: 13px;">
                                 Analyzed ${analyzedPapers} of ${totalPapers} paper${totalPapers > 1 ? 's' : ''}
                                 ${dataset.fulltext_count > 0 ? `(${dataset.fulltext_count} full-text available)` : ''}
-                                ${hasTokenLimit ? '<br><em>⚡ Limited to 15 papers with GPT-4 Turbo (128K context). Prioritized: original dataset papers & most relevant.</em>' : ''}
+                                ${hasTokenLimit ? '<br><em>Limited to 15 papers. Original dataset papers and the most relevant citations are prioritized.</em>' : ''}
                             </span>
                         </div>
                     </div>
@@ -2531,7 +2529,7 @@ ${error.stack || 'Not available'}`;
             }
         }
 
-        // Display GPT-4 analysis
+        // Display reasoning analysis
         function displayAnalysis(analysis, dataset) {
             const content = document.getElementById('analysis-content');
 

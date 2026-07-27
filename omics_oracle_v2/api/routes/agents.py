@@ -202,7 +202,7 @@ class AIAnalysisRequest(BaseModel):
         default=15,
         ge=1,
         le=20,
-        description="Max papers to analyze per dataset (default=15 for comprehensive analysis with GPT-4 Turbo)",
+        description="Max papers to analyze per dataset (default=15 for comprehensive reasoning analysis)",
     )
     # RAG Phase 1: Enhanced context
     query_processing: Optional[QueryProcessingContext] = Field(
@@ -239,7 +239,7 @@ async def analyze_datasets(
     """
     Use AI to analyze and provide insights on search results.
 
-    This endpoint uses GPT-4 or other LLMs to:
+    This endpoint uses a configured reasoning model to:
     - Explain which datasets are most relevant
     - Compare datasets and their methodologies
     - Provide scientific context and insights

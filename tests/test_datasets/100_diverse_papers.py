@@ -1,5 +1,5 @@
 """
-Comprehensive 100-paper test dataset for Sci-Hub/LibGen validation.
+Comprehensive 100-paper test dataset for full-text validation.
 
 Papers selected to cover:
 - Different publishers (Nature, Science, Cell, Springer, Wiley, Elsevier, etc.)
@@ -10,7 +10,7 @@ Papers selected to cover:
 
 COMPREHENSIVE_100_PAPERS = [
     # ============================================================================
-    # CATEGORY 1: CLASSIC OLD PAYWALLED PAPERS (1990s-2010) - Should be in Sci-Hub
+    # CATEGORY 1: CLASSIC OLD PAYWALLED PAPERS (1990s-2010)
     # ============================================================================
     {
         "doi": "10.1126/science.1058040",
@@ -19,7 +19,13 @@ COMPREHENSIVE_100_PAPERS = [
         "publisher": "Science",
         "type": "paywalled",
     },
-    {"doi": "10.1038/35057062", "pmid": "11237011", "year": 2001, "publisher": "Nature", "type": "paywalled"},
+    {
+        "doi": "10.1038/35057062",
+        "pmid": "11237011",
+        "year": 2001,
+        "publisher": "Nature",
+        "type": "paywalled",
+    },
     {
         "doi": "10.1126/science.1072994",
         "pmid": "12130773",
@@ -77,7 +83,7 @@ COMPREHENSIVE_100_PAPERS = [
         "type": "paywalled",
     },
     # ============================================================================
-    # CATEGORY 2: RECENT PAYWALLED PAPERS (2020-2023) - May be in Sci-Hub
+    # CATEGORY 2: RECENT PAYWALLED PAPERS (2020-2023)
     # ============================================================================
     {
         "doi": "10.1038/s41586-020-2008-3",
@@ -150,7 +156,7 @@ COMPREHENSIVE_100_PAPERS = [
         "type": "paywalled",
     },
     # ============================================================================
-    # CATEGORY 3: VERY NEW PAPERS (2024) - Likely NOT in Sci-Hub yet
+    # CATEGORY 3: VERY NEW PAPERS (2024)
     # ============================================================================
     {
         "doi": "10.1126/science.adi4415",
@@ -266,8 +272,20 @@ COMPREHENSIVE_100_PAPERS = [
     # ============================================================================
     # CATEGORY 6: WILEY - Various journals
     # ============================================================================
-    {"doi": "10.1002/advs.202308024", "pmid": None, "year": 2024, "publisher": "Adv Sci", "type": "OA"},
-    {"doi": "10.1111/imm.13821", "pmid": None, "year": 2024, "publisher": "Immunology", "type": "hybrid"},
+    {
+        "doi": "10.1002/advs.202308024",
+        "pmid": None,
+        "year": 2024,
+        "publisher": "Adv Sci",
+        "type": "OA",
+    },
+    {
+        "doi": "10.1111/imm.13821",
+        "pmid": None,
+        "year": 2024,
+        "publisher": "Immunology",
+        "type": "hybrid",
+    },
     {
         "doi": "10.1002/anie.202315129",
         "pmid": "37853894",
@@ -327,10 +345,34 @@ COMPREHENSIVE_100_PAPERS = [
         "publisher": "BMC Biology",
         "type": "OA",
     },
-    {"doi": "10.7554/eLife.89410", "pmid": None, "year": 2024, "publisher": "eLife", "type": "OA"},
-    {"doi": "10.3389/fimmu.2024.1352169", "pmid": None, "year": 2024, "publisher": "Frontiers", "type": "OA"},
-    {"doi": "10.3390/ijms25052895", "pmid": "38474133", "year": 2024, "publisher": "MDPI", "type": "OA"},
-    {"doi": "10.1093/nar/gkad1082", "pmid": "37994678", "year": 2023, "publisher": "NAR", "type": "OA"},
+    {
+        "doi": "10.7554/eLife.89410",
+        "pmid": None,
+        "year": 2024,
+        "publisher": "eLife",
+        "type": "OA",
+    },
+    {
+        "doi": "10.3389/fimmu.2024.1352169",
+        "pmid": None,
+        "year": 2024,
+        "publisher": "Frontiers",
+        "type": "OA",
+    },
+    {
+        "doi": "10.3390/ijms25052895",
+        "pmid": "38474133",
+        "year": 2024,
+        "publisher": "MDPI",
+        "type": "OA",
+    },
+    {
+        "doi": "10.1093/nar/gkad1082",
+        "pmid": "37994678",
+        "year": 2023,
+        "publisher": "NAR",
+        "type": "OA",
+    },
     {
         "doi": "10.1093/bioinformatics/btad633",
         "pmid": "37871883",
@@ -407,11 +449,23 @@ COMPREHENSIVE_100_PAPERS = [
         "publisher": "Biochemistry",
         "type": "paywalled",
     },
-    {"doi": "10.1021/ja00051a040", "pmid": None, "year": 1990, "publisher": "JACS", "type": "paywalled"},
+    {
+        "doi": "10.1021/ja00051a040",
+        "pmid": None,
+        "year": 1990,
+        "publisher": "JACS",
+        "type": "paywalled",
+    },
     # ============================================================================
     # CATEGORY 10: ROYAL SOCIETY OF CHEMISTRY (RSC)
     # ============================================================================
-    {"doi": "10.1039/D3SC05339J", "pmid": "38239694", "year": 2024, "publisher": "Chem Sci", "type": "OA"},
+    {
+        "doi": "10.1039/D3SC05339J",
+        "pmid": "38239694",
+        "year": 2024,
+        "publisher": "Chem Sci",
+        "type": "OA",
+    },
     {
         "doi": "10.1039/D3CS00650F",
         "pmid": "38168691",
@@ -453,7 +507,13 @@ COMPREHENSIVE_100_PAPERS = [
     # ============================================================================
     # CATEGORY 12: AMERICAN ASSOCIATION FOR THE ADVANCEMENT OF SCIENCE (AAAS)
     # ============================================================================
-    {"doi": "10.1126/sciadv.adj4801", "pmid": "38134279", "year": 2023, "publisher": "Sci Adv", "type": "OA"},
+    {
+        "doi": "10.1126/sciadv.adj4801",
+        "pmid": "38134279",
+        "year": 2023,
+        "publisher": "Sci Adv",
+        "type": "OA",
+    },
     {
         "doi": "10.1126/sciimmunol.adj2420",
         "pmid": "38170766",
@@ -471,7 +531,13 @@ COMPREHENSIVE_100_PAPERS = [
     # ============================================================================
     # CATEGORY 13: ROCKEFELLER UNIVERSITY PRESS
     # ============================================================================
-    {"doi": "10.1084/jem.20230929", "pmid": "38175896", "year": 2024, "publisher": "J Exp Med", "type": "OA"},
+    {
+        "doi": "10.1084/jem.20230929",
+        "pmid": "38175896",
+        "year": 2024,
+        "publisher": "J Exp Med",
+        "type": "OA",
+    },
     {
         "doi": "10.1083/jcb.202309094",
         "pmid": "38175915",
@@ -648,7 +714,13 @@ COMPREHENSIVE_100_PAPERS = [
         "type": "book",
     },
     # Conference proceedings
-    {"doi": "10.1109/CVPR.2016.90", "pmid": None, "year": 2016, "publisher": "IEEE", "type": "conference"},
+    {
+        "doi": "10.1109/CVPR.2016.90",
+        "pmid": None,
+        "year": 2016,
+        "publisher": "IEEE",
+        "type": "conference",
+    },
 ]
 
 

@@ -19,7 +19,7 @@ OmicsOracle automates the analysis of gene expression datasets from GEO (Gene Ex
 - **Citation discovery** from PubMed, Semantic Scholar, OpenAlex
 
 ### AI-Powered Insights
-- **GPT-4 Turbo integration** for intelligent analysis
+- **GPT-5.6 reasoning integration** for intelligent analysis
 - **Biological context interpretation** from GEO metadata
 - **Methodology summarization** from full-text papers
 - **Experimental design validation**
@@ -55,37 +55,39 @@ git clone https://github.com/sdodlapa/OmicsOracle.git
 cd OmicsOracle
 
 # Create virtual environment
-python3 -m venv venv
+python3.11 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
-pip install -r requirements/base.txt
-pip install -r requirements/dev.txt  # For development
+# Install the current dependency manifests and required runtime extras
+python -m pip install --upgrade pip
+python -m pip install -r archive/docs-nov3-2025/requirements/base.txt
+python -m pip install -r archive/docs-nov3-2025/requirements/dev.txt
+python -m pip install pypdf 'pydantic[email]'
 ```
+
+The dependency manifests are currently retained under `archive/docs-nov3-2025/requirements/`; the root-level `requirements/` directory is not present in this revision.
 
 ### Configuration
 
-Create a `.env` file in the project root:
+Create a local `.env` file from the tracked template, then replace placeholder values as needed:
 
 ```bash
-# Required
-OPENAI_API_KEY=your_openai_api_key_here
-
-# Optional (for enhanced access)
-UNPAYWALL_EMAIL=your.email@domain.com
-SEMANTIC_SCHOLAR_API_KEY=your_api_key
-CORE_API_KEY=your_api_key
+cp .env.example .env
 ```
+
+`OPENAI_API_KEY` is required for AI analysis. Redis is optional; the application falls back when it is unavailable. Never commit `.env` or real credentials.
 
 ### Running the Server
 
 ```bash
-# Start the server
-./start_omics_oracle.sh
+# Standard local start
+venv/bin/python -m omics_oracle_v2.api.main
 
-# Or manually
-python -m omics_oracle_v2.api.main
+# Institutional networks that require the repository's SSL bypass mode
+./start_omics_oracle.sh
 ```
+
+The startup script disables SSL verification and should only be used on a trusted network where that workaround is required.
 
 The server will start on `http://localhost:8000`
 
@@ -110,21 +112,27 @@ The server will start on `http://localhost:8000`
 ```python
 import requests
 
-# Analyze a GEO dataset
+# Search for GEO datasets and publications
 response = requests.post(
-    "http://localhost:8000/api/agents/analyze-geo",
-    json={"geo_id": "GSE290468"}
+  "http://localhost:8000/api/agents/search",
+  json={
+    "search_terms": ["GSE290468"],
+    "max_results": 20,
+    "enable_semantic": False,
+  },
 )
 
 result = response.json()
-print(result["ai_analysis"])
+print(result)
 ```
 
 ### Command Line
 
 ```bash
-# Quick validation test
-python -m omics_oracle_v2.api.routes.agents --geo-id GSE290468
+# Quick API validation after starting the server
+curl -X POST http://localhost:8000/api/agents/search \
+  -H 'Content-Type: application/json' \
+  -d '{"search_terms":["GSE290468"],"max_results":20,"enable_semantic":false}'
 ```
 
 ---
@@ -184,7 +192,7 @@ OmicsOracle/
   2. Unpaywall (30M+ articles)
   3. Institutional access
   4. CORE, bioRxiv, arXiv
-  5. Crossref, Sci-Hub, LibGen
+  5. Crossref
 
 ### 3. PDF Download & Validation
 - Download PDFs with retry logic
@@ -205,17 +213,20 @@ OmicsOracle/
 ### Running Tests
 
 ```bash
-# All tests
-pytest tests/
+# Focused tests during development (the global config enforces 85% coverage)
+venv/bin/python -m pytest --no-cov path/to/test_file.py
 
-# Specific test suite
-pytest tests/unit/
-pytest tests/integration/
-pytest tests/e2e/
+# Current AI configuration and PMC PDF regression checks
+venv/bin/python -m pytest -q --no-cov \
+  omics_oracle_v2/tests/unit/test_config.py -k AISettings
+venv/bin/python -m pytest -q --no-cov \
+  omics_oracle_v2/tests/unit/test_pmc_client.py
 
-# With coverage
-pytest --cov=omics_oracle_v2 --cov-report=html
+# Full configured suite (includes the repository-wide coverage gate)
+venv/bin/python -m pytest
 ```
+
+Some legacy and archived tests are not aligned with the active `omics_oracle_v2` package. Treat focused tests for the changed surface as the primary development check and report unrelated collection or coverage failures separately.
 
 ### Code Quality
 
@@ -290,7 +301,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Unpaywall** - Open access discovery
 - **Semantic Scholar** - Citation graph and metadata
 - **OpenAlex** - Open scholarly metadata
-- **OpenAI** - GPT-4 Turbo for AI analysis
+- **OpenAI** - GPT-5.6 reasoning models for AI analysis
 
 ---
 
@@ -334,6 +345,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [API Reference](docs/current/API_REFERENCE.md)
 - [Configuration Guide](config/README.md)
 - [Architecture Overview](docs/current/ARCHITECTURE.md)
+- [AI Analysis Cache Assessment](docs/reports/AI_ANALYSIS_CACHE_ASSESSMENT_2026-07-26.md)
 
 For more documentation, see the [docs/](docs/) directory.
 

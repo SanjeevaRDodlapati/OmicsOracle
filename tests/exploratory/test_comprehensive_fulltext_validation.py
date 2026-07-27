@@ -3,7 +3,7 @@ Comprehensive Full-Text Validation Test
 Tests the complete full-text retrieval system with 100 diverse papers.
 
 This demonstrates:
-1. Coverage across all sources (Unpaywall, Sci-Hub, LibGen, arXiv, etc.)
+1. Coverage across legal open-access sources
 2. Robustness with different paper types and publishers
 3. Performance metrics and statistics
 4. Real-world applicability
@@ -29,14 +29,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 os.environ["PYTHONHTTPSVERIFY"] = "0"
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # Import the 100-paper dataset
 import importlib.util
 
-from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.url_collection.manager import (
+    FullTextManager, FullTextManagerConfig)
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 spec = importlib.util.spec_from_file_location(
     "diverse_papers", Path(__file__).parent / "test_datasets" / "100_diverse_papers.py"
@@ -50,14 +54,14 @@ async def validate_comprehensive_fulltext():
     """
     Comprehensive validation test with 100 diverse papers.
 
-    Tests all sources: Unpaywall + Sci-Hub + LibGen + arXiv + bioRxiv + CORE + Crossref
+    Tests Unpaywall, arXiv, bioRxiv, CORE, and Crossref.
     """
     print("=" * 80)
     print("COMPREHENSIVE FULL-TEXT VALIDATION TEST")
     print("=" * 80)
     print()
     print(f"Testing {len(COMPREHENSIVE_100_PAPERS)} diverse papers")
-    print("Sources: Unpaywall + Sci-Hub + LibGen + arXiv + bioRxiv + CORE + Crossref")
+    print("Sources: Unpaywall + arXiv + bioRxiv + CORE + Crossref")
     print()
 
     # Create publications from dataset
@@ -85,7 +89,7 @@ async def validate_comprehensive_fulltext():
         publications.append(pub)
 
     # Phase 1: Test with OPTIMIZED sources (institutional first!)
-    print("PHASE 1: OPTIMIZED - All Sources (Institutional + Unpaywall + Sci-Hub + LibGen)")
+    print("PHASE 1: OPTIMIZED - Legal Open-Access Sources")
     print("-" * 80)
 
     config = FullTextManagerConfig(
@@ -96,8 +100,6 @@ async def validate_comprehensive_fulltext():
         enable_crossref=True,  # Priority 5: Publisher links
         enable_biorxiv=True,  # Priority 6: Preprints
         enable_arxiv=True,
-        enable_scihub=True,  # Priority 7: Sci-Hub (optimized - 4 mirrors, 2 patterns)
-        enable_libgen=True,  # Priority 8: LibGen
         core_api_key=os.getenv("CORE_API_KEY"),  # Load from .env
         unpaywall_email="sdodl001@odu.edu",
         max_concurrent=3,
@@ -112,7 +114,9 @@ async def validate_comprehensive_fulltext():
         batch_size = 10
         for i in range(0, len(publications), batch_size):
             batch = publications[i : i + batch_size]
-            print(f"\nProcessing papers {i+1}-{min(i+batch_size, len(publications))}...")
+            print(
+                f"\nProcessing papers {i+1}-{min(i+batch_size, len(publications))}..."
+            )
 
             batch_results = await manager.get_fulltext_batch(batch)
             results.extend(batch_results)
@@ -135,7 +139,9 @@ async def validate_comprehensive_fulltext():
         total_found = sum(1 for r in results if r.success)
         total_papers = len(results)
 
-        print(f"Overall Coverage: {total_found}/{total_papers} ({total_found/total_papers*100:.1f}%)")
+        print(
+            f"Overall Coverage: {total_found}/{total_papers} ({total_found/total_papers*100:.1f}%)"
+        )
         print(f"Total Time: {elapsed:.1f}s ({elapsed/total_papers:.2f}s per paper)")
         print()
 
@@ -148,7 +154,9 @@ async def validate_comprehensive_fulltext():
 
         print("Breakdown by Source:")
         print("-" * 80)
-        for source, count in sorted(source_counts.items(), key=lambda x: x[1], reverse=True):
+        for source, count in sorted(
+            source_counts.items(), key=lambda x: x[1], reverse=True
+        ):
             percentage = count / total_papers * 100
             print(f"  {source:15} → {count:3} papers ({percentage:5.1f}%)")
         print()
@@ -166,8 +174,12 @@ async def validate_comprehensive_fulltext():
         print("Coverage by Paper Type:")
         print("-" * 80)
         for paper_type, stats in sorted(type_stats.items()):
-            percentage = stats["found"] / stats["total"] * 100 if stats["total"] > 0 else 0
-            print(f"  {paper_type:15} → {stats['found']:3}/{stats['total']:3} ({percentage:5.1f}%)")
+            percentage = (
+                stats["found"] / stats["total"] * 100 if stats["total"] > 0 else 0
+            )
+            print(
+                f"  {paper_type:15} → {stats['found']:3}/{stats['total']:3} ({percentage:5.1f}%)"
+            )
         print()
 
         # Publisher breakdown (for paywalled papers)
@@ -187,8 +199,12 @@ async def validate_comprehensive_fulltext():
             for publisher, stats in sorted(
                 publisher_stats.items(), key=lambda x: x[1]["total"], reverse=True
             ):
-                percentage = stats["found"] / stats["total"] * 100 if stats["total"] > 0 else 0
-                print(f"  {publisher:20} → {stats['found']:2}/{stats['total']:2} ({percentage:5.1f}%)")
+                percentage = (
+                    stats["found"] / stats["total"] * 100 if stats["total"] > 0 else 0
+                )
+                print(
+                    f"  {publisher:20} → {stats['found']:2}/{stats['total']:2} ({percentage:5.1f}%)"
+                )
             print()
 
         # Papers not found (for debugging)

@@ -30,6 +30,7 @@ async def call_openai(
     max_tokens: int = 800,
     temperature: float = 0.7,
     timeout: int = 30,
+    reasoning_effort: Optional[str] = None,
 ) -> Optional[str]:
     """
     Call OpenAI GPT API with Redis caching to avoid redundant expensive calls.
@@ -62,7 +63,7 @@ async def call_openai(
 
     # Generate cache key from prompt + config
     # Include temperature and model to avoid serving wrong cached response
-    cache_input = f"{prompt}|{system_message}|{model}|{temperature}"
+    cache_input = f"{prompt}|{system_message}|{model}|{temperature}|{reasoning_effort}"
     cache_key = f"ai_summary:{hashlib.sha256(cache_input.encode()).hexdigest()[:16]}"
 
     # Try Redis cache first (hot-tier)
@@ -102,18 +103,31 @@ async def call_openai(
     try:
         client = OpenAI(api_key=api_key)
 
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=max_tokens,
-            temperature=temperature,
-            timeout=timeout,
-        )
+        model_name = model.lower()
+        uses_responses_api = model_name.startswith(("gpt-5", "o1", "o3", "o4"))
 
-        content = response.choices[0].message.content
+        if uses_responses_api:
+            response = client.responses.create(
+                model=model,
+                instructions=system_message,
+                input=prompt,
+                max_output_tokens=max_tokens,
+                reasoning={"effort": reasoning_effort or "medium"},
+                timeout=timeout,
+            )
+            content = response.output_text
+        else:
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=max_tokens,
+                temperature=temperature,
+                timeout=timeout,
+            )
+            content = response.choices[0].message.content
 
         if not content or not content.strip():
             logger.warning("OpenAI returned empty response")

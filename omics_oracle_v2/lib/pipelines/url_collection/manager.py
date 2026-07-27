@@ -32,15 +32,11 @@ from typing import Dict, List, Optional
 
 from omics_oracle_v2.lib.pipelines.url_collection.sources.institutional_access import (
     InstitutionalAccessManager, InstitutionType)
-from omics_oracle_v2.lib.pipelines.url_collection.sources.libgen_client import (
-    LibGenClient, LibGenConfig)
 from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources import (
     ArXivClient, BioRxivClient, COREClient, CrossrefClient, PMCClient,
     PMCConfig)
 from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import (
     UnpaywallClient, UnpaywallConfig)
-from omics_oracle_v2.lib.pipelines.url_collection.sources.scihub_client import (
-    SciHubClient, SciHubConfig)
 from omics_oracle_v2.lib.pipelines.url_collection.url_validator import (
     URLType, URLValidator)
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
@@ -59,8 +55,6 @@ class FullTextSource(str, Enum):
     BIORXIV = "biorxiv"
     ARXIV = "arxiv"
     CROSSREF = "crossref"
-    SCIHUB = "scihub"  # NEW - Phase 2
-    LIBGEN = "libgen"  # NEW - Phase 3
     CACHE = "cache"
 
 
@@ -120,12 +114,8 @@ class FullTextManagerConfig(BaseModel):
         enable_biorxiv: Try bioRxiv/medRxiv
         enable_arxiv: Try arXiv
         enable_crossref: Use Crossref full-text links
-        enable_scihub: Try Sci-Hub (NEW - Phase 2, use responsibly)
-        enable_libgen: Try LibGen (NEW - Phase 3, use responsibly)
         core_api_key: API key for CORE
         unpaywall_email: Email for Unpaywall API
-        scihub_use_proxy: Use proxy/Tor for Sci-Hub
-        libgen_use_proxy: Use proxy/Tor for LibGen
         max_concurrent: Maximum concurrent source attempts
         timeout_per_source: Timeout for each source (seconds)
     """
@@ -142,23 +132,9 @@ class FullTextManagerConfig(BaseModel):
     enable_crossref: bool = Field(
         default=True, description="Use Crossref full-text links"
     )
-    enable_scihub: bool = Field(
-        default=False,
-        description="Try Sci-Hub (Phase 2, use responsibly, disabled by default)",
-    )
-    enable_libgen: bool = Field(
-        default=False,
-        description="Try LibGen (Phase 3, use responsibly, disabled by default)",
-    )
     core_api_key: Optional[str] = Field(default=None, description="API key for CORE")
     unpaywall_email: Optional[str] = Field(
         default=None, description="Email for Unpaywall API"
-    )
-    scihub_use_proxy: bool = Field(
-        default=False, description="Use proxy/Tor for Sci-Hub"
-    )
-    libgen_use_proxy: bool = Field(
-        default=False, description="Use proxy/Tor for LibGen"
     )
     max_concurrent: int = Field(
         default=3, description="Maximum concurrent source attempts", ge=1
@@ -209,8 +185,6 @@ class FullTextManager:
         self.arxiv_client: Optional[ArXivClient] = None
         self.crossref_client: Optional[CrossrefClient] = None
         self.unpaywall_client: Optional[UnpaywallClient] = None  # NEW
-        self.scihub_client: Optional[SciHubClient] = None  # NEW
-        self.libgen_client: Optional[LibGenClient] = None  # NEW
 
         # Statistics
         self.stats = {
@@ -282,20 +256,6 @@ class FullTextManager:
             await self.unpaywall_client.__aenter__()
             logger.info("Unpaywall client initialized")
 
-        # Initialize Sci-Hub client (NEW - Phase 2)
-        if self.config.enable_scihub:
-            scihub_config = SciHubConfig(use_proxy=self.config.scihub_use_proxy)
-            self.scihub_client = SciHubClient(scihub_config)
-            await self.scihub_client.__aenter__()
-            logger.info("[WARNING] Sci-Hub client initialized (use responsibly)")
-
-        # Initialize LibGen client (NEW - Phase 3)
-        if self.config.enable_libgen:
-            libgen_config = LibGenConfig()
-            self.libgen_client = LibGenClient(libgen_config)
-            await self.libgen_client.__aenter__()
-            logger.info("[WARNING] LibGen client initialized (use responsibly)")
-
         self.initialized = True
         logger.info("All OA source clients initialized")
 
@@ -318,10 +278,6 @@ class FullTextManager:
             await self.crossref_client.__aexit__(None, None, None)
         if self.unpaywall_client:  # NEW
             await self.unpaywall_client.__aexit__(None, None, None)
-        if self.scihub_client:  # NEW
-            await self.scihub_client.__aexit__(None, None, None)
-        if self.libgen_client:  # NEW
-            await self.libgen_client.__aexit__(None, None, None)
 
         self.initialized = False
         logger.info("All OA source clients cleaned up")
@@ -846,108 +802,6 @@ class FullTextManager:
             logger.debug(f"Unpaywall lookup failed: {e}")
             return FullTextResult(success=False, error=str(e))
 
-    async def _try_scihub(self, publication: Publication) -> FullTextResult:
-        """
-        Try to get full-text from Sci-Hub (Phase 2).
-
-        [WARNING]  Use responsibly and in compliance with local laws.
-
-        ENHANCED (Oct 11, 2025):
-        - Downloads and saves PDF to data/fulltext/pdf/scihub/
-        - Returns saved file path for immediate use
-        - Enables easy deletion if legal compliance requires
-
-        Args:
-            publication: Publication object
-
-        Returns:
-            FullTextResult with saved PDF path if successful
-        """
-        if not self.config.enable_scihub or not self.scihub_client:
-            return FullTextResult(
-                success=False, error="Sci-Hub disabled or not initialized"
-            )
-
-        try:
-            # Try DOI first, then PMID
-            identifier = publication.doi or publication.pmid
-
-            if not identifier:
-                return FullTextResult(
-                    success=False, error="No DOI or PMID for Sci-Hub lookup"
-                )
-
-            pdf_url = await self.scihub_client.get_pdf_url(identifier)
-
-            if not pdf_url:
-                return FullTextResult(success=False, error="Not found in Sci-Hub")
-
-            logger.info(f"[OK] Found PDF via Sci-Hub: {identifier}")
-
-            # Return PDF URL for PDFDownloadManager
-            return FullTextResult(
-                success=True,
-                source=FullTextSource.SCIHUB,
-                url=pdf_url,
-                metadata={
-                    "identifier": identifier,
-                    "warning": "Use responsibly and in compliance with local laws",
-                },
-            )
-
-        except Exception as e:
-            logger.debug(f"Sci-Hub lookup failed: {e}")
-            return FullTextResult(success=False, error=str(e))
-
-    async def _try_libgen(self, publication: Publication) -> FullTextResult:
-        """
-        Try to get full-text from LibGen (Phase 3).
-
-        [WARNING]  Use responsibly and in compliance with local laws.
-
-        ENHANCED (Oct 11, 2025):
-        - Downloads and saves PDF to data/fulltext/pdf/libgen/
-        - Returns saved file path for immediate use
-        - Enables easy deletion if legal compliance requires
-
-        Args:
-            publication: Publication object
-
-        Returns:
-            FullTextResult with saved PDF path if successful
-        """
-        if not self.config.enable_libgen or not self.libgen_client:
-            return FullTextResult(
-                success=False, error="LibGen disabled or not initialized"
-            )
-
-        try:
-            # LibGen requires DOI
-            if not publication.doi:
-                return FullTextResult(success=False, error="No DOI for LibGen lookup")
-
-            pdf_url = await self.libgen_client.get_pdf_url(publication.doi)
-
-            if not pdf_url:
-                return FullTextResult(success=False, error="Not found in LibGen")
-
-            logger.info(f"[OK] Found PDF via LibGen: {publication.doi}")
-
-            # Return PDF URL for PDFDownloadManager
-            return FullTextResult(
-                success=True,
-                source=FullTextSource.LIBGEN,
-                url=pdf_url,
-                metadata={
-                    "doi": publication.doi,
-                    "warning": "Use responsibly and in compliance with local laws",
-                },
-            )
-
-        except Exception as e:
-            logger.debug(f"LibGen lookup failed: {e}")
-            return FullTextResult(success=False, error=str(e))
-
     async def get_parsed_content(self, publication: Publication) -> Optional[Dict]:
         """
         DEPRECATED: Use Pipeline 3 + Pipeline 4 instead.
@@ -1136,7 +990,6 @@ class FullTextManager:
         - Sources ordered by: effectiveness > legality > speed
         - Institutional access first (highest quality, legal)
         - Open access second (legal, good coverage)
-        - Sci-Hub/LibGen last (legal gray area, use as fallback)
         - STOPS at first success (skip remaining sources)
 
         Deprecated: October 14, 2025
@@ -1195,8 +1048,6 @@ class FullTextManager:
         # Priority 5: OpenAlex OA URLs (metadata-driven, legal)
         # Priority 6: Crossref (publisher links, legal)
         # Priority 7: bioRxiv/arXiv (preprints, specialized, legal)
-        # Priority 8: Sci-Hub (~15-20% additional, gray area, use responsibly)
-        # Priority 9: LibGen (~5-10% additional, gray area, use responsibly)
 
         sources = [
             ("cache", self._check_cache),  # Always check cache first (instant)
@@ -1214,11 +1065,6 @@ class FullTextManager:
             ("crossref", self._try_crossref),  # Priority 6: Publisher links
             ("biorxiv", self._try_biorxiv),  # Priority 7a: Biomedical preprints
             ("arxiv", self._try_arxiv),  # Priority 7b: Other preprints
-            (
-                "scihub",
-                self._try_scihub,
-            ),  # Priority 8: Sci-Hub (optimized, 23.9% per mirror)
-            ("libgen", self._try_libgen),  # Priority 9: LibGen (fallback)
         ]
 
         # WATERFALL: Try each source in order, STOP at first success
@@ -1351,8 +1197,6 @@ class FullTextManager:
             ("crossref", self._try_crossref, 5),
             ("biorxiv", self._try_biorxiv, 6),
             ("arxiv", self._try_arxiv, 7),
-            ("scihub", self._try_scihub, 8),
-            ("libgen", self._try_libgen, 9),
             ("pmc", self._try_pmc, 11),  # MOVED TO END - PMC blocks programmatic access
         ]
 

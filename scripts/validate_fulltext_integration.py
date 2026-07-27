@@ -119,14 +119,18 @@ async def test_2_url_fallback_logic():
     print()
 
     # Read the download_with_fallback code
-    download_manager_file = project_root / "omics_oracle_v2/lib/enrichment/fulltext/download_manager.py"
+    download_manager_file = (
+        project_root / "omics_oracle_v2/lib/enrichment/fulltext/download_manager.py"
+    )
 
     with open(download_manager_file, "r") as f:
         code = f.read()
 
     # Check for retry logic
     has_retry_loop = "for attempt in range" in code and "max_retries_per_url" in code
-    has_url_loop = "for i, source_url in enumerate(all_urls)" in code or "for url" in code
+    has_url_loop = (
+        "for i, source_url in enumerate(all_urls)" in code or "for url" in code
+    )
     has_fallback_continue = "continue" in code and "# All retries exhausted" in code
 
     print("Code Analysis:")
@@ -170,13 +174,17 @@ async def test_3_parallel_url_collection():
 
     # Check for key logic patterns
     checks = {
-        "Parallel execution (asyncio.gather)": "asyncio.gather" in code and "get_all_fulltext_urls" in code,
-        "Graceful exception handling (return_exceptions=True)": "return_exceptions=True" in code,
+        "Parallel execution (asyncio.gather)": "asyncio.gather" in code
+        and "get_all_fulltext_urls" in code,
+        "Graceful exception handling (return_exceptions=True)": "return_exceptions=True"
+        in code,
         "Continues on source failure (not break)": "continue" in code
         and "isinstance(result, Exception)" in code,
         "Only fails if NO URLs (not if < 11)": "if not all_urls:" in code,
-        "Succeeds with 1+ URLs": "if len(all_urls)" in code or "all_urls.append" in code,
-        "Logs failures without breaking": "logger.debug" in code and "exception:" in code,
+        "Succeeds with 1+ URLs": "if len(all_urls)" in code
+        or "all_urls.append" in code,
+        "Logs failures without breaking": "logger.debug" in code
+        and "exception:" in code,
     }
 
     print("Logic Validation:")
@@ -186,7 +194,7 @@ async def test_3_parallel_url_collection():
     print()
 
     # Check for major sources (don't require all 11)
-    major_sources = ["pmc", "unpaywall", "institutional", "core", "scihub"]
+    major_sources = ["pmc", "unpaywall", "institutional", "core"]
     found_major = sum(1 for s in major_sources if s in code)
 
     print(f"Major sources found: {found_major}/{len(major_sources)}")
@@ -240,7 +248,8 @@ async def test_4_ai_uses_fulltext():
         "Extracts results": "ft.results" in code,
         "Extracts discussion": "ft.discussion" in code,
         "Tells GPT about full-text": "You have access to full-text content" in code,
-        "Warns when no full-text": "No full-text available" in code or "GEO summary only" in code,
+        "Warns when no full-text": "No full-text available" in code
+        or "GEO summary only" in code,
         "Different prompts for with/without": "if total_fulltext_papers > 0" in code
         or "if ds.fulltext" in code,
     }
@@ -255,7 +264,9 @@ async def test_4_ai_uses_fulltext():
     total_count = len(checks)
 
     if passed_count >= 6:
-        print_success(f"YES! AI uses full-text ({passed_count}/{total_count} checks passed)")
+        print_success(
+            f"YES! AI uses full-text ({passed_count}/{total_count} checks passed)"
+        )
         print()
         print("Flow confirmed:")
         print("  1. Extract parsed sections (abstract, methods, results, discussion)")

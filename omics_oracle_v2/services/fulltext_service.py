@@ -102,8 +102,6 @@ class FulltextService:
                 enable_biorxiv=True,
                 enable_arxiv=True,
                 enable_crossref=True,
-                enable_scihub=True,  # Fast and reliable
-                enable_libgen=True,
                 download_pdfs=False,  # We handle downloads separately
                 unpaywall_email=os.getenv("UNPAYWALL_EMAIL", "research@omicsoracle.ai"),
                 core_api_key=os.getenv("CORE_API_KEY"),

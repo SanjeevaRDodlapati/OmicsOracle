@@ -334,7 +334,8 @@ class PMCClient:
                 timeout=aiohttp.ClientTimeout(total=5),
                 allow_redirects=True,
             ) as response:
-                if response.status == 200:
+                content_type = response.headers.get("Content-Type", "").lower()
+                if response.status == 200 and "application/pdf" in content_type:
                     logger.info(
                         f"[PMC] Found PMC{pmc_id} via direct PDF: {direct_pdf_url}"
                     )
@@ -372,7 +373,8 @@ class PMCClient:
                 timeout=aiohttp.ClientTimeout(total=5),
                 allow_redirects=True,
             ) as response:
-                if response.status == 200:
+                content_type = response.headers.get("Content-Type", "").lower()
+                if response.status == 200 and "application/pdf" in content_type:
                     logger.info(
                         f"[PMC] Found PMC{pmc_id} via EuropePMC: {europepmc_url}"
                     )

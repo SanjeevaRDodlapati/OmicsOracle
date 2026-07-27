@@ -10,18 +10,13 @@ echo ""
 
 # Define the files to update
 test_files=(
-    "tests/test_scihub.py"
     "tests/test_fulltext_manager.py"
     "tests/test_detailed_breakdown.py"
-    "tests/test_scihub_response_debug.py"
     "tests/test_single_doi_debug.py"
-    "tests/test_scihub_fills_gaps.py"
     "tests/test_identify_failures.py"
     "tests/test_comprehensive_fulltext_validation.py"
     "tests/fulltext/test_integration.py"
     "tests/test_geo_citation_pipeline_integration.py"
-    "tests/test_scihub_full_html.py"
-    "tests/test_scihub_strategies.py"
     "tests/week3/test_session_cleanup.py"
     "tests/lib/fulltext/test_normalizer.py"
     "tests/lib/fulltext/test_smart_cache.py"
@@ -29,7 +24,6 @@ test_files=(
     "tests/lib/fulltext/test_cache_db.py"
     "tests/test_phase1_phase2.py"
     "tests/test_pipeline_1_2_integration.py"
-    "tests/test_scihub_debug.py"
 )
 
 echo "Will update ${#test_files[@]} test files..."

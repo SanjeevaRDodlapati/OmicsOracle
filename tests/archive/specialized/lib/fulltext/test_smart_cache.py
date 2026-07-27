@@ -19,11 +19,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from omics_oracle_v2.lib.pipelines.pdf_download.smart_cache import (
-    LocalFileResult,
-    SmartCache,
-    check_local_cache,
-)
+from omics_oracle_v2.cache.smart_cache import (LocalFileResult, SmartCache,
+                                               check_local_cache)
 
 
 @pytest.fixture
@@ -212,21 +209,6 @@ class TestPDFFileDetection:
         assert result.file_type == "pdf"
         assert result.source == "institutional"
 
-    def test_find_scihub_pdf(self, smart_cache, mock_publication):
-        """Test finding Sci-Hub PDF in scihub/ subdirectory."""
-        scihub_dir = smart_cache.pdf_dir / "scihub"
-        scihub_dir.mkdir(parents=True, exist_ok=True)
-
-        sanitized_doi = mock_publication.doi.replace("/", "_").replace(".", "_")
-        pdf_file = scihub_dir / f"{sanitized_doi}.pdf"
-        pdf_file.write_bytes(b"%PDF-1.4 fake pdf content")
-
-        result = smart_cache.find_local_file(mock_publication)
-
-        assert result.found is True
-        assert result.file_type == "pdf"
-        assert result.source == "scihub"
-
     def test_find_hash_based_cache(self, smart_cache, mock_publication):
         """Test finding legacy hash-based cached PDF."""
         # Create hash-based cache file (old system)
@@ -294,7 +276,10 @@ class TestFileSaving:
         pdf_content = b"%PDF-1.4 Test arXiv PDF content"
 
         saved_path = smart_cache.save_file(
-            content=pdf_content, publication=mock_arxiv_publication, source="arxiv", file_type="pdf"
+            content=pdf_content,
+            publication=mock_arxiv_publication,
+            source="arxiv",
+            file_type="pdf",
         )
 
         assert saved_path.exists()
@@ -307,7 +292,10 @@ class TestFileSaving:
         xml_content = b"<?xml version='1.0'?><article>Content</article>"
 
         saved_path = smart_cache.save_file(
-            content=xml_content, publication=mock_publication, source="pmc", file_type="nxml"
+            content=xml_content,
+            publication=mock_publication,
+            source="pmc",
+            file_type="nxml",
         )
 
         assert saved_path.exists()
@@ -320,7 +308,10 @@ class TestFileSaving:
         pdf_content = b"%PDF-1.4 Institutional PDF"
 
         saved_path = smart_cache.save_file(
-            content=pdf_content, publication=mock_publication, source="institutional", file_type="pdf"
+            content=pdf_content,
+            publication=mock_publication,
+            source="institutional",
+            file_type="pdf",
         )
 
         assert saved_path.exists()
@@ -333,7 +324,10 @@ class TestFileSaving:
 
         # Save file
         saved_path = smart_cache.save_file(
-            content=pdf_content, publication=mock_publication, source="institutional", file_type="pdf"
+            content=pdf_content,
+            publication=mock_publication,
+            source="institutional",
+            file_type="pdf",
         )
 
         # Retrieve file
@@ -416,7 +410,9 @@ class TestEdgeCases:
 class TestConvenienceFunction:
     """Test the convenience function check_local_cache()."""
 
-    def test_check_local_cache_found(self, smart_cache, mock_publication, temp_cache_dir):
+    def test_check_local_cache_found(
+        self, smart_cache, mock_publication, temp_cache_dir
+    ):
         """Test convenience function when file exists."""
         # Create a PDF file
         pmc_dir = temp_cache_dir / "pdf" / "pmc"
@@ -461,4 +457,6 @@ class TestPerformance:
         # Should complete in under 1 second (likely under 0.1s)
         assert elapsed < 1.0
 
-        print(f"\n100 cache lookups: {elapsed*1000:.2f}ms ({elapsed*10:.2f}ms per lookup)")
+        print(
+            f"\n100 cache lookups: {elapsed*1000:.2f}ms ({elapsed*10:.2f}ms per lookup)"
+        )

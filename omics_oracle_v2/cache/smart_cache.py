@@ -22,7 +22,6 @@ Storage Structure:
     |   +-- pmc/           # PMC PDFs (fallback from XML)
     |   +-- institutional/ # Institutional access PDFs
     |   +-- publisher/     # Direct publisher PDFs
-    |   +-- scihub/        # Sci-Hub PDFs
     |   +-- biorxiv/       # bioRxiv/medRxiv PDFs
     |   +-- {hash}.pdf     # Legacy hash-based cache
     +-- parsed/            # Future: parsed JSON cache
@@ -239,8 +238,7 @@ class SmartCache:
         3. institutional/ (institutional access downloads)
         4. publisher/ (direct from publisher)
         5. biorxiv/ (bioRxiv/medRxiv preprints)
-        6. scihub/ (Sci-Hub downloads)
-        7. Root pdf/ directory (hash-based cache - legacy)
+        6. Root pdf/ directory (hash-based cache - legacy)
 
         Args:
             ids_to_check: List of (id_type, id_value) tuples
@@ -258,8 +256,6 @@ class SmartCache:
             ("institutional", self.pdf_dir / "institutional"),
             ("publisher", self.pdf_dir / "publisher"),
             ("biorxiv", self.pdf_dir / "biorxiv"),
-            ("scihub", self.pdf_dir / "scihub"),
-            ("libgen", self.pdf_dir / "libgen"),
         ]
 
         # Check each location
@@ -347,7 +343,7 @@ class SmartCache:
         Args:
             content: File content as bytes
             publication: Publication object with identifiers
-            source: Source identifier ('arxiv', 'pmc', 'institutional', 'scihub', etc.)
+            source: Source identifier ('arxiv', 'pmc', 'institutional', etc.)
             file_type: File extension ('pdf', 'xml', 'nxml')
 
         Returns:

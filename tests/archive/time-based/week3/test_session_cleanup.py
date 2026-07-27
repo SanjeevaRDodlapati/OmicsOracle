@@ -21,13 +21,15 @@ import asyncio
 import pytest
 
 from omics_oracle_v2.core.config import Settings
-from omics_oracle_v2.lib.pipelines.url_collection.sources.libgen_client import LibGenClient
-from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.arxiv_client import ArXivClient
-from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.crossref_client import CrossrefClient
-from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import UnpaywallClient
-from omics_oracle_v2.lib.pipelines.url_collection.sources.scihub_client import SciHubClient
+from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.arxiv_client import \
+    ArXivClient
+from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.crossref_client import \
+    CrossrefClient
+from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import \
+    UnpaywallClient
 from omics_oracle_v2.lib.search_engines.geo.client import GEOClient
-from omics_oracle_v2.lib.search_orchestration.orchestrator import SearchOrchestrator
+from omics_oracle_v2.lib.search_orchestration.orchestrator import \
+    SearchOrchestrator
 
 
 @pytest.mark.asyncio
@@ -54,7 +56,9 @@ async def test_geo_client_explicit_close():
         await asyncio.sleep(0.1)
 
         # Check for ResourceWarnings
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
+        resource_warnings = [
+            w for w in warning_list if issubclass(w.category, ResourceWarning)
+        ]
 
         assert len(resource_warnings) == 0, (
             f"Found {len(resource_warnings)} ResourceWarning(s): "
@@ -80,7 +84,9 @@ async def test_geo_client_context_manager():
         # Give time for cleanup
         await asyncio.sleep(0.1)
 
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
+        resource_warnings = [
+            w for w in warning_list if issubclass(w.category, ResourceWarning)
+        ]
         assert len(resource_warnings) == 0
 
 
@@ -97,16 +103,17 @@ async def test_crossref_client_close():
         # Give time for cleanup
         await asyncio.sleep(0.1)
 
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
+        resource_warnings = [
+            w for w in warning_list if issubclass(w.category, ResourceWarning)
+        ]
         assert len(resource_warnings) == 0
 
 
 @pytest.mark.asyncio
 async def test_unpaywall_client_close():
     """Test that UnpaywallClient properly closes its session."""
-    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import (
-        UnpaywallConfig,
-    )
+    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import \
+        UnpaywallConfig
 
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always", ResourceWarning)
@@ -117,37 +124,9 @@ async def test_unpaywall_client_close():
 
         await asyncio.sleep(0.1)
 
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
-        assert len(resource_warnings) == 0
-
-
-@pytest.mark.asyncio
-async def test_libgen_client_close():
-    """Test that LibGenClient properly closes its session."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always", ResourceWarning)
-
-        async with LibGenClient() as client:
-            assert client.session is not None
-
-        await asyncio.sleep(0.1)
-
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
-        assert len(resource_warnings) == 0
-
-
-@pytest.mark.asyncio
-async def test_scihub_client_close():
-    """Test that SciHubClient properly closes its session."""
-    with warnings.catch_warnings(record=True) as warning_list:
-        warnings.simplefilter("always", ResourceWarning)
-
-        async with SciHubClient() as client:
-            assert client.session is not None
-
-        await asyncio.sleep(0.1)
-
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
+        resource_warnings = [
+            w for w in warning_list if issubclass(w.category, ResourceWarning)
+        ]
         assert len(resource_warnings) == 0
 
 
@@ -162,7 +141,9 @@ async def test_arxiv_client_close():
 
         await asyncio.sleep(0.1)
 
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
+        resource_warnings = [
+            w for w in warning_list if issubclass(w.category, ResourceWarning)
+        ]
         assert len(resource_warnings) == 0
 
 
@@ -188,7 +169,9 @@ async def test_orchestrator_cascade_close():
 
         await asyncio.sleep(0.1)
 
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
+        resource_warnings = [
+            w for w in warning_list if issubclass(w.category, ResourceWarning)
+        ]
         assert (
             len(resource_warnings) == 0
         ), f"Orchestrator close() cascade failed: {len(resource_warnings)} warning(s)"
@@ -196,11 +179,11 @@ async def test_orchestrator_cascade_close():
 
 @pytest.mark.asyncio
 async def test_all_clients_explicit_close():
-    """Test that all 5 identified clients can be closed explicitly without warnings."""
+    """Test that all identified clients can be closed explicitly without warnings."""
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always", ResourceWarning)
 
-        # Create all 5 clients (using their config classes where needed)
+        # Create all clients (using their config classes where needed)
         clients = []
 
         # 1. CrossrefClient
@@ -209,32 +192,15 @@ async def test_all_clients_explicit_close():
         clients.append(crossref)
 
         # 2. UnpaywallClient
-        from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import (
-            UnpaywallConfig,
-        )
+        from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import \
+            UnpaywallConfig
 
         unpaywall_config = UnpaywallConfig(email="test@example.com")
         unpaywall = UnpaywallClient(unpaywall_config)
         await unpaywall.__aenter__()
         clients.append(unpaywall)
 
-        # 3. LibGenClient
-        from omics_oracle_v2.lib.pipelines.url_collection.sources.libgen_client import LibGenConfig
-
-        libgen_config = LibGenConfig()
-        libgen = LibGenClient(libgen_config)
-        await libgen.__aenter__()
-        clients.append(libgen)
-
-        # 4. SciHubClient
-        from omics_oracle_v2.lib.pipelines.url_collection.sources.scihub_client import SciHubConfig
-
-        scihub_config = SciHubConfig()
-        scihub = SciHubClient(scihub_config)
-        await scihub.__aenter__()
-        clients.append(scihub)
-
-        # 5. ArXivClient
+        # 3. ArXivClient
         arxiv = ArXivClient()
         await arxiv.__aenter__()
         clients.append(arxiv)
@@ -245,7 +211,9 @@ async def test_all_clients_explicit_close():
 
         await asyncio.sleep(0.1)
 
-        resource_warnings = [w for w in warning_list if issubclass(w.category, ResourceWarning)]
+        resource_warnings = [
+            w for w in warning_list if issubclass(w.category, ResourceWarning)
+        ]
 
         print(f"\nTotal clients tested: {len(clients)}")
         print(f"ResourceWarnings found: {len(resource_warnings)}")
@@ -266,9 +234,8 @@ async def test_memory_cleanup():
     assert crossref.session is None
 
     # Test UnpaywallClient
-    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import (
-        UnpaywallConfig,
-    )
+    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import \
+        UnpaywallConfig
 
     unpaywall_config = UnpaywallConfig(email="test@example.com")
     async with UnpaywallClient(unpaywall_config) as unpaywall:

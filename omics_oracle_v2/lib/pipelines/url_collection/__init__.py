@@ -13,8 +13,6 @@ Sources (in priority order):
 6. bioRxiv/medRxiv
 7. arXiv
 8. Crossref
-9. Sci-Hub (optional, disabled by default)
-10. LibGen (optional, disabled by default)
 
 Integration Contract:
 - Input: Publication object with identifiers (DOI, PMID, etc.)
@@ -36,13 +34,10 @@ Created: October 14, 2025 (Pipeline Separation)
 """
 
 from omics_oracle_v2.lib.pipelines.url_collection.manager import (
-    FullTextManager,
-    FullTextManagerConfig,
-    FullTextResult,
-    FullTextSource,
-    SourceURL,
-)
-from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType, URLValidator
+    FullTextManager, FullTextManagerConfig, FullTextResult, FullTextSource,
+    SourceURL)
+from omics_oracle_v2.lib.pipelines.url_collection.url_validator import (
+    URLType, URLValidator)
 
 __all__ = [
     "FullTextManager",

@@ -17,12 +17,9 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from omics_oracle_v2.lib.pipelines.url_collection.manager import (
-    FullTextManager,
-    FullTextManagerConfig,
-    FullTextResult,
-    FullTextSource,
-)
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+    FullTextManager, FullTextManagerConfig, FullTextResult, FullTextSource)
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 
 async def test_fulltext_result_handling():
@@ -70,8 +67,6 @@ async def test_fulltext_result_handling():
         enable_biorxiv=True,
         enable_arxiv=True,
         enable_crossref=False,  # Disabled - requires API key
-        enable_scihub=False,
-        enable_libgen=False,
         enable_institutional=False,
         timeout_per_source=10,
         max_concurrent=3,
@@ -86,7 +81,9 @@ async def test_fulltext_result_handling():
         print("Step 3: Verifying result types")
         for i, result in enumerate(fulltext_results, 1):
             is_fulltext_result = isinstance(result, FullTextResult)
-            print(f"   [{i}] Type: {type(result).__name__} - Is FullTextResult: {is_fulltext_result}")
+            print(
+                f"   [{i}] Type: {type(result).__name__} - Is FullTextResult: {is_fulltext_result}"
+            )
             if not is_fulltext_result:
                 print(f"      ❌ FAIL: Expected FullTextResult, got {type(result)}")
                 return False
@@ -102,7 +99,9 @@ async def test_fulltext_result_handling():
                 pub.fulltext_source = result.source.value if result.source else None
                 print(f"   ✅ Mapped: {pub.title[:40]}...")
                 print(f"      URL: {result.url[:60]}...")
-                print(f"      Source: {result.source.value if result.source else 'None'}")
+                print(
+                    f"      Source: {result.source.value if result.source else 'None'}"
+                )
             else:
                 print(f"   ⚠️  No fulltext: {pub.title[:40]}...")
             papers_with_fulltext.append(pub)
@@ -110,14 +109,22 @@ async def test_fulltext_result_handling():
 
         # Step 5: Verify publications now have fulltext info
         print("Step 5: Verifying publications have fulltext_url and fulltext_source")
-        fulltext_count = sum(1 for p in papers_with_fulltext if hasattr(p, "fulltext_url") and p.fulltext_url)
-        print(f"   Publications with fulltext_url: {fulltext_count}/{len(papers_with_fulltext)}")
+        fulltext_count = sum(
+            1
+            for p in papers_with_fulltext
+            if hasattr(p, "fulltext_url") and p.fulltext_url
+        )
+        print(
+            f"   Publications with fulltext_url: {fulltext_count}/{len(papers_with_fulltext)}"
+        )
 
         # Step 6: Calculate coverage (as pipeline does)
         print()
         print("Step 6: Calculating coverage (as GEOCitationPipeline does)")
         fulltext_coverage = (
-            sum(1 for r in fulltext_results if r.success) / len(fulltext_results) if fulltext_results else 0
+            sum(1 for r in fulltext_results if r.success) / len(fulltext_results)
+            if fulltext_results
+            else 0
         )
         print(f"   Full-text coverage: {fulltext_coverage:.1%}")
         print()
@@ -141,8 +148,12 @@ async def test_fulltext_result_handling():
     print("=" * 80)
     print()
     print("Summary:")
-    print(f"  - get_fulltext_batch() returned {len(fulltext_results)} FullTextResult objects ✓")
-    print(f"  - Successfully mapped results to {len(papers_with_fulltext)} publications ✓")
+    print(
+        f"  - get_fulltext_batch() returned {len(fulltext_results)} FullTextResult objects ✓"
+    )
+    print(
+        f"  - Successfully mapped results to {len(papers_with_fulltext)} publications ✓"
+    )
     print(f"  - {fulltext_count} publications have fulltext URLs ✓")
     print(f"  - Coverage calculated correctly: {fulltext_coverage:.1%} ✓")
     print(f"  - Source counts calculated correctly: {len(source_counts)} sources ✓")
@@ -166,23 +177,38 @@ async def test_pipeline_pdf_download_list():
     print("Step 1: Creating test publications with mixed fulltext availability")
     publications = [
         Publication(
-            title="Paper with PMC ID", pmid="12345678", pmcid="PMC3795411", source=PublicationSource.PUBMED
+            title="Paper with PMC ID",
+            pmid="12345678",
+            pmcid="PMC3795411",
+            source=PublicationSource.PUBMED,
         ),
-        Publication(title="Paper without PMC ID", pmid="87654321", source=PublicationSource.PUBMED),
+        Publication(
+            title="Paper without PMC ID",
+            pmid="87654321",
+            source=PublicationSource.PUBMED,
+        ),
     ]
 
     # Manually add fulltext info (simulating the fixed pipeline behavior)
-    publications[0].fulltext_url = "https://europepmc.org/articles/PMC3795411?pdf=render"
+    publications[
+        0
+    ].fulltext_url = "https://europepmc.org/articles/PMC3795411?pdf=render"
     publications[0].fulltext_source = "pmc"
     # publications[1] has no fulltext_url
 
-    print(f"   Publication 1: Has fulltext_url = {hasattr(publications[0], 'fulltext_url')}")
-    print(f"   Publication 2: Has fulltext_url = {hasattr(publications[1], 'fulltext_url')}")
+    print(
+        f"   Publication 1: Has fulltext_url = {hasattr(publications[0], 'fulltext_url')}"
+    )
+    print(
+        f"   Publication 2: Has fulltext_url = {hasattr(publications[1], 'fulltext_url')}"
+    )
     print()
 
     # Test the filtering logic from the pipeline
     print("Step 2: Filtering publications for PDF download")
-    papers_to_download = [p for p in publications if hasattr(p, "fulltext_url") and p.fulltext_url]
+    papers_to_download = [
+        p for p in publications if hasattr(p, "fulltext_url") and p.fulltext_url
+    ]
 
     print(f"   Papers to download: {len(papers_to_download)}/{len(publications)}")
     print()
@@ -214,7 +240,9 @@ def main():
     print("=" * 80)
     print("FINAL TEST RESULTS")
     print("=" * 80)
-    print(f"  Test 1 (FullTextResult Handling): {'✅ PASSED' if result1 else '❌ FAILED'}")
+    print(
+        f"  Test 1 (FullTextResult Handling): {'✅ PASSED' if result1 else '❌ FAILED'}"
+    )
     print(f"  Test 2 (PDF Download List): {'✅ PASSED' if result2 else '❌ FAILED'}")
     print()
 

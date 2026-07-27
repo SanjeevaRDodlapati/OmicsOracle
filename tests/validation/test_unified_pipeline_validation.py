@@ -28,7 +28,10 @@ sys.path.insert(0, str(workspace_root))
 # Setup logging (less verbose for repeated tests)
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
-log_file = log_dir / f"unified_pipeline_validation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+log_file = (
+    log_dir
+    / f"unified_pipeline_validation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+)
 
 logging.basicConfig(
     level=logging.WARNING,  # Changed from INFO to reduce noise
@@ -43,13 +46,12 @@ logger.setLevel(logging.INFO)
 # Import OmicsOracle components
 from omics_oracle_v2.core.config import Settings
 from omics_oracle_v2.lib.citations.filters import (
-    filter_by_year_range,
-    filter_recent_publications,
-    rank_by_citations_and_recency,
-)
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
+    filter_by_year_range, filter_recent_publications,
+    rank_by_citations_and_recency)
 from omics_oracle_v2.lib.geo.client import GEOClient
-from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
+from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import \
+    GEOCitationDiscovery
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
 from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
 
 
@@ -122,19 +124,29 @@ async def test_citation_discovery_with_recency():
         elapsed = time.time() - start_time
 
         all_papers = result.citing_papers
-        print_result("✅", f"Found {len(all_papers)} total citing papers in {elapsed:.1f}s")
+        print_result(
+            "✅", f"Found {len(all_papers)} total citing papers in {elapsed:.1f}s"
+        )
 
         # Apply RECENCY filters (this is the NEW feature we developed!)
         recent_2020 = filter_by_year_range(all_papers, min_year=2020, max_year=2025)
-        print_result("✅", f"Recency filter (2020-2025): {len(recent_2020)}/{len(all_papers)} papers")
+        print_result(
+            "✅",
+            f"Recency filter (2020-2025): {len(recent_2020)}/{len(all_papers)} papers",
+        )
 
         recent_5yr = filter_recent_publications(all_papers, years_back=5)
-        print_result("✅", f"Recency filter (last 5 years): {len(recent_5yr)}/{len(all_papers)} papers")
+        print_result(
+            "✅",
+            f"Recency filter (last 5 years): {len(recent_5yr)}/{len(all_papers)} papers",
+        )
 
         # Rank by citations + recency
         if recent_2020:
             top_recent = rank_by_citations_and_recency(recent_2020[:20])
-            print_result("✅", f"Ranked {len(top_recent)} recent papers by citations + recency")
+            print_result(
+                "✅", f"Ranked {len(top_recent)} recent papers by citations + recency"
+            )
 
             # Show top 3 RECENT papers
             print(f"\n📄 Top 3 RECENT citing papers:")
@@ -143,7 +155,10 @@ async def test_citation_discovery_with_recency():
                 cites = paper.citations or 0
                 print(f"  {i}. [{year}] {paper.title[:60]}... ({cites} citations)")
 
-        return True, recent_2020[:10] if recent_2020 else []  # Return top 10 recent papers
+        return (
+            True,
+            recent_2020[:10] if recent_2020 else [],
+        )  # Return top 10 recent papers
 
     except Exception as e:
         logger.error(f"Citation discovery failed: {e}", exc_info=True)
@@ -171,7 +186,8 @@ async def test_fulltext_retrieval(papers):
         ncbi_email = os.getenv("NCBI_EMAIL", "sdodl001@odu.edu")
 
         # Create FullTextManager config with API keys from .env
-        from omics_oracle_v2.lib.pipelines.url_collection import FullTextManagerConfig
+        from omics_oracle_v2.lib.pipelines.url_collection import \
+            FullTextManagerConfig
 
         config = FullTextManagerConfig(
             enable_institutional=False,  # Skip institutional for faster testing
@@ -182,8 +198,6 @@ async def test_fulltext_retrieval(papers):
             enable_biorxiv=True,
             enable_arxiv=True,
             enable_crossref=True,
-            enable_scihub=False,
-            enable_libgen=False,
             core_api_key=core_api_key,
             unpaywall_email=ncbi_email,
             download_pdfs=True,  # Enable PDF downloads!
@@ -200,7 +214,8 @@ async def test_fulltext_retrieval(papers):
         for paper in papers[:5]:
             try:
                 # Create a Publication object with required fields
-                from omics_oracle_v2.lib.search_engines.citations.models import Publication
+                from omics_oracle_v2.lib.search_engines.citations.models import \
+                    Publication
 
                 pub = Publication(
                     pmid=paper.pmid,
@@ -213,13 +228,18 @@ async def test_fulltext_retrieval(papers):
                 result = await fulltext_mgr.get_fulltext(pub)
                 if result.success:
                     successful_retrievals.append((paper, result))
-                    print_result("✅", f"Retrieved PMID {paper.pmid} from {result.source}")
+                    print_result(
+                        "✅", f"Retrieved PMID {paper.pmid} from {result.source}"
+                    )
             except Exception as e:
                 logger.warning(f"Failed to retrieve PMID {paper.pmid}: {e}")
 
         elapsed = time.time() - start_time
 
-        print_result("✅", f"Full-text retrieved: {len(successful_retrievals)}/{min(5, len(papers))} papers")
+        print_result(
+            "✅",
+            f"Full-text retrieved: {len(successful_retrievals)}/{min(5, len(papers))} papers",
+        )
         print_result("✅", f"Retrieval completed in {elapsed:.1f}s")
 
         await fulltext_mgr.cleanup()
@@ -242,7 +262,11 @@ async def test_pdf_download_and_mapping(fulltext_results):
 
     try:
         # Get GEO ID from first test
-        geo_id = test_geo_search.geo_datasets[0].geo_id if test_geo_search.geo_datasets else "TEST_GEO"
+        geo_id = (
+            test_geo_search.geo_datasets[0].geo_id
+            if test_geo_search.geo_datasets
+            else "TEST_GEO"
+        )
 
         logger.info(f"Downloading PDFs for {geo_id}")
 
@@ -258,12 +282,17 @@ async def test_pdf_download_and_mapping(fulltext_results):
                 # Store the URL in the publication object
                 paper.pdf_url = fulltext_result.url
                 publications_with_urls.append(paper)
-                logger.info(f"Added PDF URL for PMID {paper.pmid}: {fulltext_result.url}")
+                logger.info(
+                    f"Added PDF URL for PMID {paper.pmid}: {fulltext_result.url}"
+                )
 
-        print_result("✅", f"Found {len(publications_with_urls)} publications with PDF URLs")
+        print_result(
+            "✅", f"Found {len(publications_with_urls)} publications with PDF URLs"
+        )
 
         # Step 2: Use PDFDownloadManager to actually download the files
-        from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
+        from omics_oracle_v2.lib.pipelines.pdf_download import \
+            PDFDownloadManager
 
         downloader = PDFDownloadManager(
             max_concurrent=3, max_retries=2, timeout_seconds=30, validate_pdf=True
@@ -289,7 +318,9 @@ async def test_pdf_download_and_mapping(fulltext_results):
             # Show first few failures
             for result in download_report.results[:3]:
                 if not result.success:
-                    print_result("  ⚠️", f"PMID {result.publication.pmid}: {result.error}")
+                    print_result(
+                        "  ⚠️", f"PMID {result.publication.pmid}: {result.error}"
+                    )
 
         # Create GEO-to-PDF mapping from download results
         mapping = {
@@ -331,7 +362,10 @@ async def test_pdf_download_and_mapping(fulltext_results):
             # Show first few files
             for result in download_report.results[:5]:
                 if result.success:
-                    print_result("  ✓", f"{result.pdf_path.name} ({result.file_size/1024:.1f} KB)")
+                    print_result(
+                        "  ✓",
+                        f"{result.pdf_path.name} ({result.file_size/1024:.1f} KB)",
+                    )
 
         return True, download_report.results
 
@@ -350,7 +384,8 @@ async def test_citation_enrichment(papers):
         return True, None
 
     try:
-        from omics_oracle_v2.lib.citations.clients.semantic_scholar import SemanticScholarClient
+        from omics_oracle_v2.lib.citations.clients.semantic_scholar import \
+            SemanticScholarClient
 
         settings = Settings()
         scholar = SemanticScholarClient(settings)
@@ -372,7 +407,9 @@ async def test_citation_enrichment(papers):
 
         elapsed = time.time() - start_time
 
-        print_result("✅", f"Enriched {enriched}/{min(10, len(papers))} papers with citations")
+        print_result(
+            "✅", f"Enriched {enriched}/{min(10, len(papers))} papers with citations"
+        )
         print_result("✅", f"Enrichment completed in {elapsed:.1f}s")
 
         # Show citation stats
@@ -381,7 +418,9 @@ async def test_citation_enrichment(papers):
             if cited_papers:
                 avg_cites = sum(p.citations for p in cited_papers) / len(cited_papers)
                 max_cites = max(p.citations for p in cited_papers)
-                print_result("📊", f"Citation stats: avg={avg_cites:.0f}, max={max_cites}")
+                print_result(
+                    "📊", f"Citation stats: avg={avg_cites:.0f}, max={max_cites}"
+                )
 
         return True, enriched
 
@@ -400,7 +439,9 @@ async def test_end_to_end_summary():
         pdf_dir = Path("data/pdfs")
         total_pdfs = len(list(pdf_dir.rglob("*.pdf"))) if pdf_dir.exists() else 0
 
-        mapping_files = len(list(pdf_dir.rglob("*_mapping.json"))) if pdf_dir.exists() else 0
+        mapping_files = (
+            len(list(pdf_dir.rglob("*_mapping.json"))) if pdf_dir.exists() else 0
+        )
 
         print_result("📊", f"Total PDFs downloaded: {total_pdfs}")
         print_result("📊", f"GEO-to-PDF mappings created: {mapping_files}")

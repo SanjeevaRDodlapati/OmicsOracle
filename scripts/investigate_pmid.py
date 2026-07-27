@@ -105,13 +105,6 @@ async def investigate_pmid(pmid: str):
         ("Crossref", manager._try_crossref),
     ]
 
-    # Add optional sources if enabled
-    if config.fulltext.enable_scihub:
-        sources_to_try.append(("Sci-Hub", manager._try_scihub))
-
-    if config.fulltext.enable_libgen:
-        sources_to_try.append(("LibGen", manager._try_libgen))
-
     results = []
 
     for source_name, source_func in sources_to_try:

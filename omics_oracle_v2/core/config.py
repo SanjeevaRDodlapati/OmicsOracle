@@ -27,14 +27,15 @@ Environment Variables:
     OMICS_GEO_MAX_RETRIES=3
 
     OPENAI_API_KEY=your_key
-    OMICS_AI_MODEL=gpt-4
-    OMICS_AI_MAX_TOKENS=1000
+    OMICS_AI_MODEL=gpt-5.6-terra
+    OMICS_AI_REASONING_EFFORT=high
+    OMICS_AI_MAX_TOKENS=4000
     OMICS_AI_TEMPERATURE=0.7
 """
 
 import os
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, Optional
 
 try:
     from pydantic import BaseModel, Field
@@ -46,7 +47,8 @@ except ImportError:
     SettingsConfigDict = None  # type: ignore
 
 if TYPE_CHECKING:
-    from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import PubMedConfig
+    from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import \
+        PubMedConfig
 
 
 class NLPSettings(BaseSettings):
@@ -130,12 +132,15 @@ class AISettings(BaseSettings):
         env="OPENAI_API_KEY",
     )
     model: str = Field(
-        default="gpt-4-turbo-preview",  # Changed from gpt-4 for 128K context window
-        description="OpenAI model to use",
-        env="OMICS_AI_MODEL"
+        default="gpt-5.6-terra", description="OpenAI model to use", env="OMICS_AI_MODEL"
+    )
+    reasoning_effort: Literal["minimal", "low", "medium", "high", "xhigh"] = Field(
+        default="high",
+        description="Reasoning effort for GPT-5 and o-series models",
+        env="OMICS_AI_REASONING_EFFORT",
     )
     max_tokens: int = Field(
-        default=4000,  # Comprehensive analysis with GPT-4 Turbo's large context
+        default=4000,
         ge=1,
         le=32000,
         description="Maximum tokens in response",
@@ -635,13 +640,15 @@ class SearchSettings(BaseSettings):
     # PubMed configuration
     pubmed_email: str = Field(
         default_factory=lambda: os.getenv("NCBI_EMAIL", "research@omicsoracle.ai"),
-        description="Email for PubMed API"
+        description="Email for PubMed API",
     )
-    
+
     @property
     def pubmed_config(self):
         """Lazy-load PubMedConfig to avoid circular imports."""
-        from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import PubMedConfig
+        from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import \
+            PubMedConfig
+
         return PubMedConfig(email=self.pubmed_email)
 
     # OpenAlex config
@@ -655,12 +662,9 @@ class SearchSettings(BaseSettings):
     )
     db_path: str = Field(
         default="data/database/omics_oracle.db",
-        description="Path to UnifiedDatabase file"
+        description="Path to UnifiedDatabase file",
     )
-    storage_path: str = Field(
-        default="data",
-        description="Base path for file storage"
-    )
+    storage_path: str = Field(default="data", description="Base path for file storage")
 
     # Feature flags
     enable_citations: bool = Field(

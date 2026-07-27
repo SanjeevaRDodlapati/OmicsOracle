@@ -117,8 +117,6 @@ class URLCollectionDemo:
             enable_arxiv=True,
             enable_biorxiv=True,
             enable_crossref=True,
-            enable_scihub=False,  # Disabled by default
-            enable_libgen=False,  # Disabled by default
             enable_openalex=False,  # Disable (requires API key)
             unpaywall_email=os.getenv("NCBI_EMAIL", "demo@omicsoracle.org"),
             core_api_key=os.getenv("CORE_API_KEY"),
@@ -129,9 +127,7 @@ class URLCollectionDemo:
 
         try:
             print(f"\n✓ Initialized FullTextManager")
-            print(
-                f"  Enabled sources: 8/11 (institutional + scihub/libgen + openalex disabled)"
-            )
+            print("  Enabled sources: legal open-access providers")
             print(
                 f"  CORE API Key: {config.core_api_key[:20]}... ({'SET' if config.core_api_key else 'NOT SET'})"
             )

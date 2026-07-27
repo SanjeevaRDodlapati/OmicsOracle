@@ -69,7 +69,8 @@ NCBI_EMAIL=user@example.com
 NCBI_API_KEY=...
 
 # Application Settings
-OMICS_AI_MODEL=gpt-4-turbo-preview
+OMICS_AI_MODEL=gpt-5.6-terra
+OMICS_AI_REASONING_EFFORT=high
 OMICS_AI_MAX_TOKENS=4000
 
 # Database
@@ -108,7 +109,8 @@ REDIS_URL=redis://localhost:6379/0
 # .env
 ENVIRONMENT=development
 DEBUG=true
-OMICS_AI_MODEL=gpt-4-turbo-preview
+OMICS_AI_MODEL=gpt-5.6-terra
+OMICS_AI_REASONING_EFFORT=high
 ```
 
 ### Production Setup
@@ -116,7 +118,8 @@ OMICS_AI_MODEL=gpt-4-turbo-preview
 # .env
 ENVIRONMENT=production
 DEBUG=false
-OMICS_AI_MODEL=gpt-4-turbo-preview
+OMICS_AI_MODEL=gpt-5.6-terra
+OMICS_AI_REASONING_EFFORT=high
 DATABASE_URL=postgresql://...
 REDIS_URL=redis://production:6379/0
 ```

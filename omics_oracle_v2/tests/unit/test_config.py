@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from omics_oracle_v2.core.config import AISettings, GEOSettings, NLPSettings, Settings, get_settings
+from omics_oracle_v2.core.config import (AISettings, GEOSettings, NLPSettings,
+                                         Settings, get_settings)
 
 
 class TestNLPSettings:
@@ -21,7 +22,9 @@ class TestNLPSettings:
 
     def test_custom_values(self):
         """Test custom NLP settings."""
-        settings = NLPSettings(model_name="custom_model", batch_size=64, max_entities=200)
+        settings = NLPSettings(
+            model_name="custom_model", batch_size=64, max_entities=200
+        )
 
         assert settings.model_name == "custom_model"
         assert settings.batch_size == 64
@@ -91,11 +94,12 @@ class TestAISettings:
 
     def test_default_values(self):
         """Test default AI settings."""
-        settings = AISettings()
+        settings = AISettings(_env_file=None)
 
         assert settings.openai_api_key is None
-        assert settings.model == "gpt-4"
-        assert settings.max_tokens == 1000
+        assert settings.model == "gpt-5.6-terra"
+        assert settings.reasoning_effort == "high"
+        assert settings.max_tokens == 4000
         assert settings.temperature == 0.7
         assert settings.timeout == 60
 
@@ -159,7 +163,7 @@ class TestSettings:
         # Can access nested settings
         assert settings.nlp.model_name == "en_core_web_sm"
         assert settings.geo.cache_ttl == 3600
-        assert settings.ai.model == "gpt-4"
+        assert settings.ai.model == "gpt-5.6-terra"
 
     def test_environment_variables(self, monkeypatch):
         """Test loading from environment variables."""

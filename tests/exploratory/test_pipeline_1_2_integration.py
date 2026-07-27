@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
-"""
 """Integration tests for Pipeline 1 -> Pipeline 2 flow."""
 
 import asyncio
 import logging
 import os
 import sys
-
-import pytest
-
-import asyncio
-import logging
-import sys
 from pathlib import Path
 from typing import List
 
+import pytest
+
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -31,8 +28,10 @@ async def test_pipeline_integration():
     # Import Pipeline 1: Citation Discovery
     print("📚 Step 1: Import Pipeline 1 (Citation Discovery)")
     try:
-        from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
-        from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+        from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import \
+            GEOCitationDiscovery
+        from omics_oracle_v2.lib.search_engines.citations.models import (
+            Publication, PublicationSource)
 
         print("✅ Pipeline 1 imported successfully")
     except ImportError as e:
@@ -44,10 +43,7 @@ async def test_pipeline_integration():
     print("🔗 Step 2: Import Pipeline 2 (Full-Text URL Collection)")
     try:
         from omics_oracle_v2.lib.pipelines.url_collection.manager import (
-            FullTextManager,
-            FullTextManagerConfig,
-            FullTextResult,
-        )
+            FullTextManager, FullTextManagerConfig, FullTextResult)
 
         print("✅ Pipeline 2 imported successfully")
     except ImportError as e:
@@ -119,8 +115,6 @@ async def test_pipeline_integration():
             enable_arxiv=True,
             enable_crossref=False,  # Disabled - requires API key
             # Disable optional sources for testing
-            enable_scihub=False,
-            enable_libgen=False,
             enable_institutional=False,
             # Quick timeouts for testing
             timeout_per_source=10,
@@ -162,7 +156,9 @@ async def test_pipeline_integration():
             failed = [r for r in results if not r.success]
 
             print(f"   Total publications: {len(results)}")
-            print(f"   ✅ Successful: {len(successful)} ({len(successful)/len(results)*100:.1f}%)")
+            print(
+                f"   ✅ Successful: {len(successful)} ({len(successful)/len(results)*100:.1f}%)"
+            )
             print(f"   ⚠️  Failed: {len(failed)} ({len(failed)/len(results)*100:.1f}%)")
             print()
 
@@ -202,7 +198,9 @@ async def test_pipeline_integration():
     print()
     print("Summary:")
     print(f"  - Pipeline 1 (Citations): ✅ {len(publications)} publications discovered")
-    print(f"  - Pipeline 2 (URLs): ✅ {len(successful)}/{len(results)} full-text URLs found")
+    print(
+        f"  - Pipeline 2 (URLs): ✅ {len(successful)}/{len(results)} full-text URLs found"
+    )
     print(f"  - Integration: ✅ End-to-end flow working")
     print()
     print("Next steps:")
@@ -225,10 +223,9 @@ async def test_batch_processing():
 
     try:
         from omics_oracle_v2.lib.pipelines.url_collection.manager import (
-            FullTextManager,
-            FullTextManagerConfig,
-        )
-        from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+            FullTextManager, FullTextManagerConfig)
+        from omics_oracle_v2.lib.search_engines.citations.models import (
+            Publication, PublicationSource)
 
         # Create test publications
         publications = [
@@ -268,8 +265,6 @@ async def test_batch_processing():
             enable_arxiv=True,
             enable_crossref=False,  # Disabled - requires API key
             # Disable optional sources for testing
-            enable_scihub=False,
-            enable_libgen=False,
             enable_institutional=False,
             # Quick timeouts for testing
             timeout_per_source=10,
@@ -320,7 +315,9 @@ async def main():
     print("=" * 80)
     print("FINAL TEST RESULTS")
     print("=" * 80)
-    print(f"  Test 1 (Pipeline Integration): {'✅ PASSED' if test1_passed else '❌ FAILED'}")
+    print(
+        f"  Test 1 (Pipeline Integration): {'✅ PASSED' if test1_passed else '❌ FAILED'}"
+    )
     print(f"  Test 2 (Batch Processing): {'✅ PASSED' if test2_passed else '❌ FAILED'}")
     print()
 

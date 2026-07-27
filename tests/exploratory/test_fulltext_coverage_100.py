@@ -7,8 +7,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig
+from omics_oracle_v2.lib.pipelines.url_collection import (
+    FullTextManager, FullTextManagerConfig)
+from omics_oracle_v2.lib.search_engines.citations.config import \
+    PublicationSearchConfig
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 # 100 diverse biomedical DOIs across different publishers and fields
@@ -157,10 +159,8 @@ async def test_fulltext_coverage():
         enable_crossref=True,
         enable_openalex=True,
         enable_unpaywall=True,  # NEW - Phase 1+
-        enable_scihub=True,  # NEW - Phase 2 (ENABLED for comprehensive coverage)
         core_api_key=os.getenv("CORE_API_KEY"),  # Read from env
         unpaywall_email="sdodl001@odu.edu",
-        scihub_use_proxy=False,
         download_pdfs=False,
         max_concurrent=3,  # Limit concurrency to avoid rate limits
     )
@@ -218,12 +218,16 @@ async def test_fulltext_coverage():
         # Breakdown by source
         print("Breakdown by source:")
         stats = manager.get_statistics()
-        for source, count in sorted(stats["by_source"].items(), key=lambda x: x[1], reverse=True):
+        for source, count in sorted(
+            stats["by_source"].items(), key=lambda x: x[1], reverse=True
+        ):
             print(f"  {source}: {count} ({count / len(DIVERSE_DOIS) * 100:.1f}%)")
         print()
 
         # Show some successful examples
-        successful_results = [(pub, res) for pub, res in zip(publications, all_results) if res.success]
+        successful_results = [
+            (pub, res) for pub, res in zip(publications, all_results) if res.success
+        ]
         if successful_results:
             print("Sample successful retrievals:")
             for i, (pub, res) in enumerate(successful_results[:5], 1):
@@ -233,7 +237,9 @@ async def test_fulltext_coverage():
                 print()
 
         # Show some failures
-        failed_results = [(pub, res) for pub, res in zip(publications, all_results) if not res.success]
+        failed_results = [
+            (pub, res) for pub, res in zip(publications, all_results) if not res.success
+        ]
         if failed_results:
             print(f"Sample failures ({len(failed_results)} total):")
             for i, (pub, res) in enumerate(failed_results[:5], 1):

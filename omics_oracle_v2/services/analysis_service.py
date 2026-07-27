@@ -608,19 +608,17 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
         # GPT-4-turbo: 128,000 total tokens
         # GPT-4o: 128,000 total tokens
         model_name = settings.ai.model.lower()
+        estimated_prompt_tokens = len(prompt) // 4
         if (
             "turbo" in model_name
             or "gpt-4o" in model_name
             or "gpt-4-1106" in model_name
         ):
-            # GPT-4 Turbo or GPT-4o: Use large context window
+            # Modern reasoning and large-context models
             max_output_tokens = 4000
         else:
             # GPT-4 base: Conservative allocation to avoid context overflow
             # Estimate: prompt is ~4-5K tokens, leave 3K for output
-            estimated_prompt_tokens = (
-                len(prompt) // 4
-            )  # Rough estimate: 1 token ~= 4 chars
             max_output_tokens = max(
                 2000, 8000 - estimated_prompt_tokens - 200
             )  # 200 buffer
@@ -641,6 +639,7 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
             max_tokens=max_output_tokens,
             temperature=settings.ai.temperature,
             timeout=settings.ai.timeout,
+            reasoning_effort=settings.ai.reasoning_effort,
         )
 
         if not analysis:
@@ -655,7 +654,7 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
                 error_detail += (
                     "The prompt is very large. "
                     "Try: (1) Reduce max_papers_per_dataset to 5, or "
-                    "(2) Set OMICS_AI_MODEL=gpt-4-turbo-preview for 128K context"
+                    "(2) Set OMICS_AI_MODEL=gpt-4o-mini for a larger context window"
                 )
 
             raise HTTPException(
